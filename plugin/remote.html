@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="IINA Remote">
+<meta name="color-scheme" content="light dark">
+<title>IINA Remote</title>
+<style>
+  :root { --bg: #fff; --fg: #111; --dim: #777; --line: #e5e5e5; --accent: #e5484d; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #111; --fg: #eee; --dim: #888; --line: #2a2a2a; } }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0 auto; max-width: 480px; background: var(--bg); color: var(--fg); accent-color: var(--accent);
+    font: 16px/1.4 system-ui, -apple-system, sans-serif;
+    padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+  }
+  h1 { font-size: 20px; margin: 0 0 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  input[type=range] { width: 100%; margin: 0; }
+  .times { display: flex; justify-content: space-between; color: var(--dim); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .transport { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 28px; }
+  button { font: inherit; color: inherit; background: none; border: 1px solid var(--line); border-radius: 8px; min-width: 48px; height: 44px; padding: 0 12px; }
+  button.on { border-color: var(--accent); color: var(--accent); }
+  #play { width: 72px; height: 72px; border-radius: 50%; border: 0; background: var(--fg); color: var(--bg); }
+  .icon { width: 20px; height: 20px; fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; vertical-align: middle; }
+  #play .icon { width: 28px; height: 28px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .row > span:first-child { width: 96px; flex: none; color: var(--dim); }
+  .row > :last-child { margin-left: auto; }
+  .grow { flex: 1; }
+  select {
+    font: inherit; color: inherit; border: 1px solid var(--line); border-radius: 8px; height: 44px; min-width: 0;
+    appearance: none; -webkit-appearance: none; padding: 0 36px 0 12px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23888' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center / 12px 8px;
+  }
+  .delay { gap: 0; }
+  .delay button { border: 0; min-width: 40px; padding: 0; }
+  .delay svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
+  .value { flex: 1; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  body.offline main { opacity: .3; pointer-events: none; }
+</style>
+</head>
+<body class="offline">
+<h1 id="title">Connecting…</h1>
+<main>
+  <input id="seek" type="range" min="0" max="1" step="1" value="0" aria-label="Position">
+  <div class="times"><span id="elapsed">0:00</span><span id="remaining">-0:00</span></div>
+
+  <div class="transport">
+    <button data-cmd="playlist-prev" aria-label="Previous"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6v12M18 6l-9 6 9 6z"/></svg></button>
+    <button data-seek="-10">−10</button>
+    <button id="play" aria-label="Play or pause"><svg class="icon" viewBox="0 0 24 24"><path id="playIcon" d="M8 5l11 7-11 7z"/></svg></button>
+    <button data-seek="30">+30</button>
+    <button data-cmd="playlist-next" aria-label="Next"><svg class="icon" viewBox="0 0 24 24"><path d="M18 6v12M6 6l9 6-9 6z"/></svg></button>
+  </div>
+
+  <div class="row"><span>Volume</span><input id="volume" class="grow" type="range" min="0" max="100" step="1"><button id="mute">Mute</button></div>
+  <div class="row"><span>Speed</span>
+    <select id="speed"><option>0.5</option><option>0.75</option><option>1</option><option>1.25</option><option>1.5</option><option>2</option></select>
+  </div>
+  <div class="row"><span>Subtitles</span><select id="sid" class="grow"></select><button id="subVisible">Show</button></div>
+  <div class="row delay" data-prop="sub-delay" data-key="subDelay"><span>Sub delay</span><button data-step="-1" aria-label="Back 1 second"><svg viewBox="0 0 24 24"><path d="M12 6l-6 6 6 6M18 6l-6 6 6 6"/></svg></button><button data-step="-0.1" aria-label="Back 0.1 seconds"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="value"></span><button data-step="0.1" aria-label="Forward 0.1 seconds"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button><button data-step="1" aria-label="Forward 1 second"><svg viewBox="0 0 24 24"><path d="M6 6l6 6-6 6M12 6l6 6-6 6"/></svg></button></div>
+  <div class="row"><span>Audio</span><select id="aid" class="grow"></select></div>
+  <div class="row delay" data-prop="audio-delay" data-key="audioDelay"><span>Audio delay</span><button data-step="-1" aria-label="Back 1 second"><svg viewBox="0 0 24 24"><path d="M12 6l-6 6 6 6M18 6l-6 6 6 6"/></svg></button><button data-step="-0.1" aria-label="Back 0.1 seconds"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="value"></span><button data-step="0.1" aria-label="Forward 0.1 seconds"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button><button data-step="1" aria-label="Forward 1 second"><svg viewBox="0 0 24 24"><path d="M6 6l6 6-6 6M12 6l6 6-6 6"/></svg></button></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const url = `ws://${location.hostname}:${location.hash.slice(1) || 8766}`;
+let socket, s = {}, dragging = null;
+
+function connect() {
+  socket = new WebSocket(url);
+  socket.binaryType = "arraybuffer";
+  socket.onopen = () => document.body.classList.remove("offline");
+  socket.onmessage = (e) => render(JSON.parse(new TextDecoder().decode(e.data)));
+  socket.onclose = () => {
+    document.body.classList.add("offline");
+    $("title").textContent = "Can’t reach IINA. Reconnecting…";
+    setTimeout(connect, 1500);
+  };
+}
+const send = (msg) => socket.readyState === WebSocket.OPEN && socket.send(JSON.stringify(msg));
+const set = (prop, value) => send({ set: prop, value });
+
+function clock(t) {
+  t = Math.max(0, Math.floor(t || 0));
+  const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = String(t % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+}
+
+function fillTracks(select, tracks, current, offLabel) {
+  const options = (offLabel ? [["no", offLabel]] : []).concat(tracks.map((t) => [
+    String(t.id), [t.title, t.lang.toUpperCase()].filter(Boolean).join(" · ") || `Track ${t.id}`,
+  ]));
+  const key = JSON.stringify(options);
+  if (select.dataset.key !== key) {
+    select.replaceChildren(...options.map(([value, label]) => new Option(label, value)));
+    select.dataset.key = key;
+  }
+  select.value = current;
+}
+
+function render(next) {
+  s = next;
+  $("title").textContent = s.title || "Nothing playing";
+  $("playIcon").setAttribute("d", s.pause ? "M8 5l11 7-11 7z" : "M7 5h3v14H7zM14 5h3v14h-3z");
+  const seek = $("seek");
+  seek.max = Math.max(1, Math.floor(s.duration));
+  if (dragging !== seek) seek.value = s.time;
+  $("elapsed").textContent = clock(+seek.value);
+  $("remaining").textContent = "-" + clock(s.duration - seek.value);
+  $("volume").max = s.volumeMax;
+  if (dragging !== $("volume")) $("volume").value = s.volume;
+  $("mute").classList.toggle("on", s.mute);
+  $("speed").value = String(+s.speed.toFixed(2));
+  fillTracks($("sid"), s.tracks.filter((t) => t.type === "sub"), s.sid, "Off");
+  fillTracks($("aid"), s.tracks.filter((t) => t.type === "audio"), s.aid);
+  $("subVisible").classList.toggle("on", s.subVisible);
+  document.querySelectorAll("[data-prop]").forEach((row) => {
+    row.querySelector(".value").textContent = `${(s[row.dataset.key] || 0).toFixed(1)} s`;
+  });
+}
+
+$("play").onclick = () => set("pause", !s.pause);
+$("mute").onclick = () => set("mute", !s.mute);
+$("subVisible").onclick = () => set("sub-visibility", !s.subVisible);
+$("speed").onchange = (e) => set("speed", +e.target.value);
+$("sid").onchange = (e) => set("sid", e.target.value);
+$("aid").onchange = (e) => set("aid", e.target.value);
+document.querySelectorAll("[data-cmd]").forEach((b) => (b.onclick = () => send({ cmd: b.dataset.cmd })));
+document.querySelectorAll("[data-seek]").forEach((b) => (b.onclick = () => send({ cmd: "seek", args: [+b.dataset.seek, "relative"] })));
+document.querySelectorAll("[data-prop]").forEach((row) => row.querySelectorAll("[data-step]").forEach((b) => (b.onclick = () => {
+  set(row.dataset.prop, Math.round(((s[row.dataset.key] || 0) + +b.dataset.step) * 10) / 10);
+})));
+
+for (const [slider, onInput, onCommit] of [
+  [$("seek"), (el) => ($("elapsed").textContent = clock(+el.value)), (el) => send({ cmd: "seek", args: [+el.value, "absolute"] })],
+  [$("volume"), (el) => set("volume", +el.value), () => {}],
+]) {
+  slider.oninput = () => { dragging = slider; onInput(slider); };
+  slider.onchange = () => { onCommit(slider); dragging = null; };
+}
+
+connect();
+</script>
+</body>
+</html>

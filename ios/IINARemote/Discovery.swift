@@ -6,21 +6,42 @@ final class Discovery {
     private(set) var players: [Player] = []
     private(set) var isDenied = false
 
-    private let browser = NWBrowser(for: .bonjour(type: "_iina-remote._tcp", domain: nil), using: .tcp)
+    private var browser: NWBrowser?
 
     init() {
-        browser.stateUpdateHandler = { [weak self] state in
+        startBrowsing()
+    }
+
+    func refresh() {
+        browser?.cancel()
+        startBrowsing()
+        players.forEach { $0.reconnect() }
+    }
+
+    private func startBrowsing() {
+        let browser = NWBrowser(for: .bonjour(type: "_iina-remote._tcp", domain: nil), using: .tcp)
+        browser.stateUpdateHandler = { [weak self, weak browser] state in
             MainActor.assumeIsolated {
-                if case .waiting(.dns(DNSServiceErrorType(kDNSServiceErr_PolicyDenied))) = state {
-                    self?.isDenied = true
-                } else if case .ready = state {
-                    self?.isDenied = false
+                guard let self, browser === self.browser else { return }
+                switch state {
+                case .ready:
+                    self.isDenied = false
+                case .waiting(.dns(DNSServiceErrorType(kDNSServiceErr_PolicyDenied))):
+                    self.isDenied = true
+                case .failed:
+                    self.refresh()
+                default:
+                    break
                 }
             }
         }
-        browser.browseResultsChangedHandler = { [weak self] results, _ in
-            MainActor.assumeIsolated { self?.update(results) }
+        browser.browseResultsChangedHandler = { [weak self, weak browser] results, _ in
+            MainActor.assumeIsolated {
+                guard let self, browser === self.browser else { return }
+                self.update(results)
+            }
         }
+        self.browser = browser
         browser.start(queue: .main)
     }
 

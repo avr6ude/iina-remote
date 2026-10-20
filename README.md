@@ -6,7 +6,6 @@ play, pause, seek, volume, speed, subtitle and audio tracks, delays.
 <p>
   <img src="screenshots/app.png" width="200" alt="Remote">
   <img src="screenshots/app-dark.png" width="200" alt="Remote in dark mode">
-  <img src="screenshots/picker.png" width="200" alt="Choosing between IINA windows">
   <img src="screenshots/web.png" width="200" alt="Browser remote">
 </p>
 
@@ -20,7 +19,8 @@ play, pause, seek, volume, speed, subtitle and audio tracks, delays.
 
 <a href="https://apps.apple.com/app/id6825027883"><img src="https://tools.applemarketingtools.com/api/badges/download-on-the-app-store/black/en-us" height="40" alt="Download on the App Store"></a>
 
-Open a video in IINA and launch the app. It finds every IINA window on your network by itself.
+Open a video in IINA and launch the app. It finds every IINA window on your network by itself;
+with more than one, tap the title to switch.
 
 **No app?** In IINA choose **Plugin → Show Remote QR Code** and scan the code with any phone.
 On a computer the page also takes Space (play/pause), ←/→ (seek), ↑/↓ (volume) and M (mute).

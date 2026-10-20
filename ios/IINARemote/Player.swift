@@ -29,14 +29,21 @@ final class Player: Identifiable {
         connection?.cancel()
     }
 
+    func reconnect() {
+        guard !isCancelled else { return }
+        connection?.cancel()
+        connect()
+    }
+
     private func connect() {
         let parameters = NWParameters.tcp
         parameters.defaultProtocolStack.applicationProtocols.insert(NWProtocolWebSocket.Options(), at: 0)
         let connection = NWConnection(to: endpoint, using: parameters)
-        connection.stateUpdateHandler = { [weak self] state in
+        connection.stateUpdateHandler = { [weak self, weak connection] state in
             MainActor.assumeIsolated {
+                guard let self, connection === self.connection else { return }
                 switch state {
-                case .failed(let error), .waiting(let error): self?.reconnect(after: error)
+                case .failed(let error), .waiting(let error): self.retry(after: error)
                 default: break
                 }
             }
@@ -50,7 +57,7 @@ final class Player: Identifiable {
         connection.receiveMessage { [weak self] data, _, _, error in
             MainActor.assumeIsolated {
                 guard let self, connection === self.connection else { return }
-                if let error { return self.reconnect(after: error) }
+                if let error { return self.retry(after: error) }
                 guard let data else { return self.receive(on: connection) }
                 do {
                     self.state = try JSONDecoder().decode(PlayerState.self, from: data)
@@ -62,7 +69,7 @@ final class Player: Identifiable {
         }
     }
 
-    private func reconnect(after error: NWError) {
+    private func retry(after error: NWError) {
         connection?.cancel()
         connection = nil
         state = nil

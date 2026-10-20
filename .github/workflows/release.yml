@@ -1,0 +1,25 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pack plugin
+        run: |
+          package="iina-remote-$(jq -r .version Info.json).iinaplgz"
+          zip -X "$package" Info.json main.js helper.sh qr.js serve.pl remote.html sidebar.html
+          echo "PACKAGE=$package" >> "$GITHUB_ENV"
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" "$PACKAGE" --clobber \
+            || gh release create "$GITHUB_REF_NAME" "$PACKAGE" --title "IINA Remote ${GITHUB_REF_NAME#v}" --generate-notes

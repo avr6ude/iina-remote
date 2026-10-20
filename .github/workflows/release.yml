@@ -15,7 +15,7 @@ jobs:
       - name: Pack plugin
         run: |
           package="iina-remote-$(jq -r .version Info.json).iinaplgz"
-          zip -X "$package" Info.json main.js helper.sh qr.js serve.pl remote.html sidebar.html
+          zip -X "$package" Info.json main.js helper.sh qr.js serve.pl remote.html sidebar.html icon.png
           echo "PACKAGE=$package" >> "$GITHUB_ENV"
       - name: Publish
         env:

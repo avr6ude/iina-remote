@@ -6,83 +6,115 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="IINA Remote">
 <meta name="color-scheme" content="light dark">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="icon" href="/icon.png">
 <title>IINA Remote</title>
 <style>
-  :root { --bg: #fff; --fg: #111; --dim: #777; --line: #e5e5e5; --accent: #e5484d; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #111; --fg: #eee; --dim: #888; --line: #2a2a2a; } }
-  * { box-sizing: border-box; }
+  :root { --bg: #fff; --fg: #111; --dim: #777; --line: #e6e6e6; --soft: #f3f3f3; --accent: #e5484d; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #111; --fg: #eee; --dim: #8a8a8a; --line: #2a2a2a; --soft: #1d1d1d; } }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { touch-action: manipulation; }
   body {
     margin: 0 auto; max-width: 480px; background: var(--bg); color: var(--fg); accent-color: var(--accent);
-    font: 16px/1.4 system-ui, -apple-system, sans-serif;
-    padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    font: 16px/1.4 system-ui, -apple-system, sans-serif; -webkit-user-select: none; user-select: none;
+    padding: max(24px, env(safe-area-inset-top)) 20px max(32px, env(safe-area-inset-bottom));
   }
-  h1 { font-size: 20px; margin: 0 0 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  input[type=range] { width: 100%; margin: 0; }
+  header { margin-bottom: 20px; }
+  h1 { font-size: 22px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #status { margin: 2px 0 0; color: var(--dim); font-size: 14px; }
+  #status::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: #30a46c; }
+  body.offline #status::before { background: var(--accent); }
+  body.offline main { opacity: .35; pointer-events: none; }
+  section { border-top: 1px solid var(--line); padding: 16px 0 4px; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--dim); margin: 0 0 4px; }
+  .row { display: flex; align-items: center; gap: 12px; min-height: 52px; }
+  .row > .label { flex: 1; }
+  input[type=range] { flex: 1; width: 100%; margin: 0; }
   .times { display: flex; justify-content: space-between; color: var(--dim); font-size: 13px; font-variant-numeric: tabular-nums; }
-  .transport { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 28px; }
-  button { font: inherit; color: inherit; background: none; border: 1px solid var(--line); border-radius: 8px; min-width: 48px; height: 44px; padding: 0 12px; }
-  button.on { border-color: var(--accent); color: var(--accent); }
-  #play { width: 72px; height: 72px; border-radius: 50%; border: 0; background: var(--fg); color: var(--bg); }
-  .icon { width: 20px; height: 20px; fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; vertical-align: middle; }
-  #play .icon { width: 28px; height: 28px; }
-  .row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
-  .row > span:first-child { width: 96px; flex: none; color: var(--dim); }
-  .row > :last-child { margin-left: auto; }
-  .grow { flex: 1; }
+  button { font: inherit; color: inherit; background: none; border: 0; border-radius: 10px; min-width: 44px; height: 44px; padding: 0; }
+  button:active { background: var(--soft); }
+  .icon { width: 22px; height: 22px; fill: currentColor; vertical-align: middle; }
+  .stroke { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .transport { display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px; }
+  .transport button { font-variant-numeric: tabular-nums; font-weight: 600; }
+  #play { width: 72px; height: 72px; border-radius: 50%; background: var(--fg); color: var(--bg); }
+  #play .icon { width: 30px; height: 30px; }
+  .value { min-width: 48px; text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+  #mute.on { color: var(--accent); }
   select {
-    font: inherit; color: inherit; border: 1px solid var(--line); border-radius: 8px; height: 44px; min-width: 0;
+    font: inherit; color: inherit; border: 1px solid var(--line); border-radius: 10px; height: 44px; width: 60%;
     appearance: none; -webkit-appearance: none; padding: 0 36px 0 12px;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23888' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center / 12px 8px;
   }
-  .delay { gap: 0; }
-  .delay button { border: 0; min-width: 40px; padding: 0; }
-  .delay svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
-  .value { flex: 1; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  body.offline main { opacity: .3; pointer-events: none; }
+  .stepper { display: flex; align-items: center; }
+  .stepper .reset { min-width: 64px; font-variant-numeric: tabular-nums; }
+  .segmented { display: flex; flex: 1; background: var(--soft); border-radius: 10px; padding: 3px; }
+  .segmented button { flex: 1; height: 38px; min-width: 0; border-radius: 8px; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .segmented button.on { background: var(--bg); box-shadow: 0 1px 3px #0002; font-weight: 600; }
 </style>
 </head>
 <body class="offline">
-<h1 id="title">Connecting…</h1>
+<header>
+  <h1 id="title">IINA Remote</h1>
+  <p id="status">Connecting…</p>
+</header>
 <main>
-  <input id="seek" type="range" min="0" max="1" step="1" value="0" aria-label="Position">
-  <div class="times"><span id="elapsed">0:00</span><span id="remaining">-0:00</span></div>
+  <section>
+    <input id="seek" type="range" min="0" max="1" step="1" value="0" aria-label="Position">
+    <div class="times"><span id="elapsed">0:00</span><span id="remaining">-0:00</span></div>
+    <div class="transport">
+      <button data-cmd="playlist-prev" aria-label="Previous"><svg class="icon" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM19 5v14l-10-7z"/></svg></button>
+      <button data-seek="-10" aria-label="Back 10 seconds">−10</button>
+      <button id="play" aria-label="Play or pause"><svg class="icon" viewBox="0 0 24 24"><path id="playIcon" d="M8 5l11 7-11 7z"/></svg></button>
+      <button data-seek="30" aria-label="Forward 30 seconds">+30</button>
+      <button data-cmd="playlist-next" aria-label="Next"><svg class="icon" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM5 5v14l10-7z"/></svg></button>
+    </div>
+  </section>
 
-  <div class="transport">
-    <button data-cmd="playlist-prev" aria-label="Previous"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6v12M18 6l-9 6 9 6z"/></svg></button>
-    <button data-seek="-10">−10</button>
-    <button id="play" aria-label="Play or pause"><svg class="icon" viewBox="0 0 24 24"><path id="playIcon" d="M8 5l11 7-11 7z"/></svg></button>
-    <button data-seek="30">+30</button>
-    <button data-cmd="playlist-next" aria-label="Next"><svg class="icon" viewBox="0 0 24 24"><path d="M18 6v12M6 6l9 6-9 6z"/></svg></button>
-  </div>
+  <section>
+    <h2>Sound</h2>
+    <div class="row">
+      <button id="mute" aria-label="Mute"><svg class="icon" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="muteWaves" class="stroke" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+      <input id="volume" type="range" min="0" max="100" step="1" aria-label="Volume">
+      <span class="value" id="volumeValue"></span>
+    </div>
+    <div class="row"><span class="label">Track</span><select id="aid" aria-label="Audio track"></select></div>
+    <div class="row" data-prop="audio-delay" data-key="audioDelay"><span class="label">Delay</span></div>
+  </section>
 
-  <div class="row"><span>Volume</span><input id="volume" class="grow" type="range" min="0" max="100" step="1"><button id="mute">Mute</button></div>
-  <div class="row"><span>Speed</span>
-    <select id="speed"><option>0.5</option><option>0.75</option><option>1</option><option>1.25</option><option>1.5</option><option>2</option></select>
-  </div>
-  <div class="row"><span>Subtitles</span><select id="sid" class="grow"></select><button id="subVisible">Show</button></div>
-  <div class="row delay" data-prop="sub-delay" data-key="subDelay"><span>Sub delay</span><button data-step="-1" aria-label="Back 1 second"><svg viewBox="0 0 24 24"><path d="M12 6l-6 6 6 6M18 6l-6 6 6 6"/></svg></button><button data-step="-0.1" aria-label="Back 0.1 seconds"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="value"></span><button data-step="0.1" aria-label="Forward 0.1 seconds"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button><button data-step="1" aria-label="Forward 1 second"><svg viewBox="0 0 24 24"><path d="M6 6l6 6-6 6M12 6l6 6-6 6"/></svg></button></div>
-  <div class="row"><span>Audio</span><select id="aid" class="grow"></select></div>
-  <div class="row delay" data-prop="audio-delay" data-key="audioDelay"><span>Audio delay</span><button data-step="-1" aria-label="Back 1 second"><svg viewBox="0 0 24 24"><path d="M12 6l-6 6 6 6M18 6l-6 6 6 6"/></svg></button><button data-step="-0.1" aria-label="Back 0.1 seconds"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="value"></span><button data-step="0.1" aria-label="Forward 0.1 seconds"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button><button data-step="1" aria-label="Forward 1 second"><svg viewBox="0 0 24 24"><path d="M6 6l6 6-6 6M12 6l6 6-6 6"/></svg></button></div>
+  <section>
+    <h2>Subtitles</h2>
+    <div class="row"><span class="label">Track</span><select id="sid" aria-label="Subtitle track"></select></div>
+    <div class="row" data-prop="sub-delay" data-key="subDelay"><span class="label">Delay</span></div>
+  </section>
+
+  <section>
+    <h2>Speed</h2>
+    <div class="row"><div class="segmented" id="speeds"></div></div>
+  </section>
 </main>
 
 <script>
 const $ = (id) => document.getElementById(id);
 const url = `ws://${location.hostname}:${location.hash.slice(1) || 8766}`;
-let socket, s = {}, dragging = null;
+const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const CHEVRON = { "-1": "M13 6l-6 6 6 6M19 6l-6 6 6 6", "-0.1": "M15 6l-6 6 6 6", "0.1": "M9 6l6 6-6 6", "1": "M5 6l6 6-6 6M11 6l6 6-6 6" };
+let socket, s = null, dragging = null;
 
 function connect() {
   socket = new WebSocket(url);
   socket.binaryType = "arraybuffer";
-  socket.onopen = () => document.body.classList.remove("offline");
+  socket.onopen = () => { document.body.classList.remove("offline"); $("status").textContent = `Connected to ${location.hostname}`; };
   socket.onmessage = (e) => render(JSON.parse(new TextDecoder().decode(e.data)));
   socket.onclose = () => {
     document.body.classList.add("offline");
-    $("title").textContent = "Can’t reach IINA. Reconnecting…";
+    $("status").textContent = "Can’t reach IINA. Reconnecting…";
     setTimeout(connect, 1500);
   };
 }
 const send = (msg) => socket.readyState === WebSocket.OPEN && socket.send(JSON.stringify(msg));
 const set = (prop, value) => send({ set: prop, value });
+const seekBy = (seconds) => send({ cmd: "seek", args: [seconds, "relative"] });
 
 function clock(t) {
   t = Math.max(0, Math.floor(t || 0));
@@ -105,43 +137,85 @@ function fillTracks(select, tracks, current, offLabel) {
 function render(next) {
   s = next;
   $("title").textContent = s.title || "Nothing playing";
-  $("playIcon").setAttribute("d", s.pause ? "M8 5l11 7-11 7z" : "M7 5h3v14H7zM14 5h3v14h-3z");
+  $("playIcon").setAttribute("d", s.pause ? "M8 5l11 7-11 7z" : "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z");
   const seek = $("seek");
   seek.max = Math.max(1, Math.floor(s.duration));
   if (dragging !== seek) seek.value = s.time;
   $("elapsed").textContent = clock(+seek.value);
   $("remaining").textContent = "-" + clock(s.duration - seek.value);
-  $("volume").max = s.volumeMax;
-  if (dragging !== $("volume")) $("volume").value = s.volume;
+  const volume = $("volume");
+  volume.max = s.volumeMax;
+  if (dragging !== volume) volume.value = s.volume;
+  $("volumeValue").textContent = s.mute ? "Muted" : `${Math.round(volume.value)}%`;
   $("mute").classList.toggle("on", s.mute);
-  $("speed").value = String(+s.speed.toFixed(2));
-  fillTracks($("sid"), s.tracks.filter((t) => t.type === "sub"), s.sid, "Off");
+  $("muteWaves").style.visibility = s.mute ? "hidden" : "visible";
   fillTracks($("aid"), s.tracks.filter((t) => t.type === "audio"), s.aid);
-  $("subVisible").classList.toggle("on", s.subVisible);
-  document.querySelectorAll("[data-prop]").forEach((row) => {
-    row.querySelector(".value").textContent = `${(s[row.dataset.key] || 0).toFixed(1)} s`;
+  fillTracks($("sid"), s.tracks.filter((t) => t.type === "sub"), s.subVisible ? s.sid : "no", "Off");
+  document.querySelectorAll("[data-prop] .reset").forEach((b) => {
+    b.textContent = `${(s[b.parentNode.parentNode.dataset.key] || 0).toFixed(1)} s`;
   });
+  document.querySelectorAll("#speeds button").forEach((b) => b.classList.toggle("on", Math.abs(+b.dataset.speed - s.speed) < 0.001));
 }
+
+for (const row of document.querySelectorAll("[data-prop]")) {
+  const stepper = document.createElement("div");
+  stepper.className = "stepper";
+  const step = (delta) => () => set(row.dataset.prop, delta ? Math.round(((s[row.dataset.key] || 0) + delta) * 10) / 10 : 0);
+  for (const delta of ["-1", "-0.1", null, "0.1", "1"]) {
+    const b = document.createElement("button");
+    if (delta) {
+      b.setAttribute("aria-label", `${delta > 0 ? "+" : ""}${delta} s`);
+      b.innerHTML = `<svg class="icon stroke" viewBox="0 0 24 24"><path d="${CHEVRON[delta]}"/></svg>`;
+    } else {
+      b.className = "reset";
+      b.setAttribute("aria-label", "Reset delay");
+    }
+    b.onclick = step(delta ? +delta : 0);
+    stepper.append(b);
+  }
+  row.append(stepper);
+}
+$("speeds").append(...SPEEDS.map((speed) => {
+  const b = document.createElement("button");
+  b.dataset.speed = speed;
+  b.textContent = `${speed}×`;
+  b.onclick = () => set("speed", speed);
+  return b;
+}));
 
 $("play").onclick = () => set("pause", !s.pause);
 $("mute").onclick = () => set("mute", !s.mute);
-$("subVisible").onclick = () => set("sub-visibility", !s.subVisible);
-$("speed").onchange = (e) => set("speed", +e.target.value);
-$("sid").onchange = (e) => set("sid", e.target.value);
 $("aid").onchange = (e) => set("aid", e.target.value);
+$("sid").onchange = (e) => {
+  if (e.target.value !== "no") set("sid", e.target.value);
+  set("sub-visibility", e.target.value !== "no");
+};
 document.querySelectorAll("[data-cmd]").forEach((b) => (b.onclick = () => send({ cmd: b.dataset.cmd })));
-document.querySelectorAll("[data-seek]").forEach((b) => (b.onclick = () => send({ cmd: "seek", args: [+b.dataset.seek, "relative"] })));
-document.querySelectorAll("[data-prop]").forEach((row) => row.querySelectorAll("[data-step]").forEach((b) => (b.onclick = () => {
-  set(row.dataset.prop, Math.round(((s[row.dataset.key] || 0) + +b.dataset.step) * 10) / 10);
-})));
+document.querySelectorAll("[data-seek]").forEach((b) => (b.onclick = () => seekBy(+b.dataset.seek)));
 
 for (const [slider, onInput, onCommit] of [
   [$("seek"), (el) => ($("elapsed").textContent = clock(+el.value)), (el) => send({ cmd: "seek", args: [+el.value, "absolute"] })],
-  [$("volume"), (el) => set("volume", +el.value), () => {}],
+  [$("volume"), (el) => { $("volumeValue").textContent = `${el.value}%`; set("volume", +el.value); }, () => {}],
 ]) {
   slider.oninput = () => { dragging = slider; onInput(slider); };
   slider.onchange = () => { onCommit(slider); dragging = null; };
 }
+
+document.onkeydown = (e) => {
+  const tag = e.target.tagName;
+  if (!s || e.metaKey || e.ctrlKey || tag === "SELECT" || tag === "INPUT" || (tag === "BUTTON" && e.key === " ")) return;
+  const keys = {
+    " ": () => set("pause", !s.pause),
+    ArrowLeft: () => seekBy(-10),
+    ArrowRight: () => seekBy(30),
+    ArrowUp: () => set("volume", Math.min(s.volumeMax, s.volume + 5)),
+    ArrowDown: () => set("volume", Math.max(0, s.volume - 5)),
+    m: () => set("mute", !s.mute),
+  };
+  if (!keys[e.key]) return;
+  e.preventDefault();
+  keys[e.key]();
+};
 
 connect();
 </script>

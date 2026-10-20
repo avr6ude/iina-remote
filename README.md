@@ -23,6 +23,7 @@ play, pause, seek, volume, speed, subtitle and audio tracks, delays.
 Open a video in IINA and launch the app. It finds every IINA window on your network by itself.
 
 **No app?** In IINA choose **Plugin → Show Remote QR Code** and scan the code with any phone.
+On a computer the page also takes Space (play/pause), ←/→ (seek), ↑/↓ (volume) and M (mute).
 
 <img src="screenshots/iina.png" width="600" alt="QR code in IINA's sidebar">
 

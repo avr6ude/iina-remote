@@ -3,7 +3,9 @@
   "identifier": "com.avrdude.iina-remote",
   "version": "1.0.0",
   "description": "Control playback from the IINA Remote iPhone app or any browser on your network.",
-  "author": { "name": "iina-remote" },
+  "author": { "name": "avr6ude", "url": "https://github.com/avr6ude/iina-remote" },
+  "ghRepo": "avr6ude/iina-remote",
+  "ghVersion": 1,
   "entry": "main.js",
   "permissions": ["show-osd", "file-system"],
   "sidebarTab": { "name": "Remote" }

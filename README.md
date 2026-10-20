@@ -12,8 +12,9 @@ play, pause, seek, volume, speed, subtitle and audio tracks, delays.
 
 ## Install
 
-**1. IINA plugin (required).** Download `iina-remote-1.0.0.iinaplgz` from
-[Releases](../../releases), double-click it, then enable **Remote** in IINA → Settings → Plugins.
+**1. IINA plugin (required).** In IINA → Settings → Plugins, install from GitHub with
+`https://github.com/avr6ude/iina-remote` (IINA then offers updates), or download the `.iinaplgz` from
+[Releases](../../releases) and double-click it. Enable **Remote**.
 
 **2. iPhone app.**
 
@@ -28,7 +29,7 @@ Open a video in IINA and launch the app. It finds every IINA window on your netw
 ## Development
 
 ```sh
-ln -s "$PWD/plugin" ~/Library/Application\ Support/com.colliderli.iina/plugins/com.avrdude.iina-remote.iinaplugin-dev
+ln -s "$PWD" ~/Library/Application\ Support/com.colliderli.iina/plugins/com.avrdude.iina-remote.iinaplugin-dev
 open ios/IINARemote.xcodeproj
 ```
 

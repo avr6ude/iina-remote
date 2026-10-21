@@ -14,6 +14,8 @@ const conns = new Set();
 let port = WS_PORTS.first;
 let sent = "";
 let sentLibrary = "";
+let ticks = 0;
+const inbox = [];
 let host = "";
 
 function state() {
@@ -83,7 +85,6 @@ function handle({ set, value, cmd, args = [] }) {
     return;
   }
   sent = sentLibrary = "";
-  broadcast();
 }
 
 function send(json) {
@@ -125,22 +126,30 @@ ws.onStateUpdate((s, err) => {
   if (port < WS_PORTS.last) return listen(port + 1);
   console.log(`iina-remote: no free port: ${err && err.message}`);
 });
+// These callbacks run on the WebSocket queue; IINA's core API blocks on the main thread,
+// so they only record work and the main-thread timer below does it.
 ws.onConnectionStateUpdate((conn, s) => {
   if (s === "ready") {
     conns.add(conn);
     sent = sentLibrary = "";
-    broadcastLibrary();
   } else if (s === "failed" || s === "cancelled") {
     conns.delete(conn);
   }
 });
 ws.onMessage((conn, message) => {
   try {
-    handle(JSON.parse(message.text()));
+    inbox.push(JSON.parse(message.text()));
   } catch (e) {
     console.log(`iina-remote: bad message: ${e}`);
   }
 });
+
+function tick() {
+  while (inbox.length) handle(inbox.shift());
+  ticks += 1;
+  if (sent === "" || ticks % 10 === 0) broadcast();
+  if (sentLibrary === "" || ticks % 40 === 0) broadcastLibrary();
+}
 
 function loadSidebar() {
   sidebar.loadFile("sidebar.html");
@@ -154,5 +163,4 @@ menu.addItem(menu.item("Show Remote QR Code", () => {
 }));
 utils.exec("/usr/sbin/scutil", ["--get", "ComputerName"]).then((r) => (host = r.stdout.trim()));
 listen(WS_PORTS.first);
-setInterval(broadcast, 500);
-setInterval(broadcastLibrary, 2000);
+setInterval(tick, 50);

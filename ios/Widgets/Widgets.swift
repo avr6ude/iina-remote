@@ -15,7 +15,7 @@ struct NowPlayingWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "NowPlaying", provider: Provider()) { entry in
             NowPlayingView(nowPlaying: entry.nowPlaying)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(for: .widget) { Brand.gradient }
         }
         .configurationDisplayName("Now Playing")
         .description("Control what's playing in IINA.")
@@ -45,52 +45,98 @@ struct NowPlayingWidget: Widget {
     }
 }
 
+private enum Brand {
+    static let gradient = LinearGradient(
+        colors: [Color(red: 0.95, green: 0.33, blue: 0.35), Color(red: 0.6, green: 0.09, blue: 0.15)],
+        startPoint: .topLeading, endPoint: .bottomTrailing)
+    static let deep = Color(red: 0.75, green: 0.15, blue: 0.2)
+}
+
 private struct NowPlayingView: View {
     let nowPlaying: NowPlaying?
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(nowPlaying?.mac ?? "IINA Remote")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            Text(title)
-                .font(.headline)
-                .lineLimit(family == .systemSmall ? 3 : 2)
-            Spacer(minLength: 0)
+        Group {
             if let nowPlaying, !nowPlaying.title.isEmpty {
-                ProgressView(value: nowPlaying.fraction).tint(.red)
-                Controls(isPlaying: nowPlaying.isPlaying, compact: family == .systemSmall)
+                if family == .systemSmall { small(nowPlaying) } else { medium(nowPlaying) }
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    Artwork(size: 44)
+                    Spacer(minLength: 0)
+                    Text("Nothing playing").font(.headline)
+                    Text(nowPlaying?.mac ?? "Open a video in IINA").font(.caption).opacity(0.75).lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+        }
+        .foregroundStyle(.white)
+    }
+
+    private func small(_ nowPlaying: NowPlaying) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .top) {
+                Artwork(size: 44)
+                Spacer()
+                PlayButton(isPlaying: nowPlaying.isPlaying, size: 44)
+            }
+            Spacer(minLength: 0)
+            Text(nowPlaying.title).font(.headline).lineLimit(2)
+            Text(nowPlaying.mac).font(.caption).opacity(0.75).lineLimit(1)
+            Progress(nowPlaying: nowPlaying, tint: .white).padding(.top, 4)
         }
     }
 
-    private var title: String {
-        guard let nowPlaying else { return "IINA isn't playing on this network" }
-        return nowPlaying.title.isEmpty ? "Nothing playing" : nowPlaying.title
+    private func medium(_ nowPlaying: NowPlaying) -> some View {
+        HStack(spacing: 14) {
+            Artwork(size: 118)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(nowPlaying.mac).font(.caption).opacity(0.75).lineLimit(1)
+                Text(nowPlaying.title).font(.headline).lineLimit(2)
+                Spacer(minLength: 0)
+                Progress(nowPlaying: nowPlaying, tint: .white)
+                HStack {
+                    Button(intent: SkipBackIntent()) { Image(systemName: "gobackward.10") }
+                    Spacer()
+                    PlayButton(isPlaying: nowPlaying.isPlaying, size: 36)
+                    Spacer()
+                    Button(intent: SkipForwardIntent()) { Image(systemName: "goforward.30") }
+                    Spacer()
+                    Button(intent: NextItemIntent()) { Image(systemName: "forward.end.fill") }
+                }
+                .font(.title3)
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
+        }
     }
 }
 
-private struct Controls: View {
-    let isPlaying: Bool
-    let compact: Bool
+private struct Artwork: View {
+    let size: CGFloat
 
     var body: some View {
-        HStack {
-            if !compact {
-                Button(intent: SkipBackIntent()) { Image(systemName: "gobackward.10") }
-                Spacer()
+        RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+            .fill(.white.opacity(0.18))
+            .frame(width: size, height: size)
+            .overlay {
+                Image(systemName: "play.tv.fill").font(.system(size: size * 0.42)).foregroundStyle(.white)
             }
-            Button(intent: TogglePlaybackIntent()) { Image(systemName: isPlaying ? "pause.fill" : "play.fill") }
-            Spacer()
-            Button(intent: SkipForwardIntent()) { Image(systemName: "goforward.30") }
-            if !compact {
-                Spacer()
-                Button(intent: NextItemIntent()) { Image(systemName: "forward.end.fill") }
-            }
+    }
+}
+
+private struct PlayButton: View {
+    let isPlaying: Bool
+    let size: CGFloat
+
+    var body: some View {
+        Button(intent: TogglePlaybackIntent()) {
+            Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                .font(.system(size: size * 0.42, weight: .semibold))
+                .foregroundStyle(Brand.deep)
+                .frame(width: size, height: size)
+                .background(.white, in: Circle())
         }
-        .font(.title3)
         .buttonStyle(.plain)
     }
 }
@@ -98,65 +144,95 @@ private struct Controls: View {
 struct PlaybackLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PlaybackAttributes.self) { context in
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(context.state.mac).font(.caption).foregroundStyle(.secondary)
-                        Text(context.state.title).font(.headline).lineLimit(1)
-                    }
-                    Spacer()
-                    Controls(isPlaying: context.state.isPlaying, compact: true)
-                        .frame(width: 96)
-                }
-                Progress(nowPlaying: context.state)
-            }
-            .padding()
-            .activityBackgroundTint(Color.black.opacity(0.6))
+            PlaybackCard(nowPlaying: context.state)
+                .padding(16)
+                .activityBackgroundTint(.black.opacity(0.75))
+                .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    Image(systemName: "play.tv.fill").foregroundStyle(.red)
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    Text(context.state.mac).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(spacing: 8) {
-                        Text(context.state.title).font(.headline).lineLimit(1)
-                        Progress(nowPlaying: context.state)
-                        HStack {
-                            Button(intent: SkipBackIntent()) { Image(systemName: "gobackward.10") }
-                            Spacer()
-                            Button(intent: TogglePlaybackIntent()) { Image(systemName: context.state.isPlaying ? "pause.fill" : "play.fill") }
-                            Spacer()
-                            Button(intent: SkipForwardIntent()) { Image(systemName: "goforward.30") }
-                        }
-                        .font(.title2)
-                        .buttonStyle(.plain)
-                    }
+                    PlaybackCard(nowPlaying: context.state).padding(.horizontal, 6)
                 }
             } compactLeading: {
-                Image(systemName: context.state.isPlaying ? "play.fill" : "pause.fill").foregroundStyle(.red)
+                Image(systemName: "play.tv.fill").foregroundStyle(.red)
             } compactTrailing: {
                 if context.state.isPlaying {
-                    Text(timerInterval: context.state.interval, countsDown: false).monospacedDigit().frame(maxWidth: 48)
+                    Text(timerInterval: context.state.interval, countsDown: true)
+                        .monospacedDigit()
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: 44)
+                } else {
+                    Image(systemName: "pause.fill")
                 }
             } minimal: {
-                Image(systemName: "play.tv.fill").foregroundStyle(.red)
+                Image(systemName: context.state.isPlaying ? "play.fill" : "pause.fill").foregroundStyle(.red)
             }
+        }
+    }
+}
+
+private struct PlaybackCard: View {
+    let nowPlaying: NowPlaying
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(nowPlaying.title).font(.headline).lineLimit(1)
+                Text(nowPlaying.mac).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            VStack(spacing: 4) {
+                Progress(nowPlaying: nowPlaying)
+                HStack {
+                    Time(nowPlaying: nowPlaying, remaining: false)
+                    Spacer()
+                    Time(nowPlaying: nowPlaying, remaining: true)
+                }
+                .font(.caption2)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+            }
+            HStack {
+                Button(intent: SkipBackIntent()) { Image(systemName: "gobackward.10") }
+                Spacer()
+                Button(intent: TogglePlaybackIntent()) { Image(systemName: nowPlaying.isPlaying ? "pause.fill" : "play.fill") }
+                Spacer()
+                Button(intent: SkipForwardIntent()) { Image(systemName: "goforward.30") }
+                Spacer()
+                Button(intent: NextItemIntent()) { Image(systemName: "forward.end.fill") }
+            }
+            .font(.title2)
+            .buttonStyle(.plain)
+            .padding(.horizontal, 12)
+        }
+    }
+}
+
+private struct Time: View {
+    let nowPlaying: NowPlaying
+    let remaining: Bool
+
+    var body: some View {
+        if nowPlaying.isPlaying {
+            Text(timerInterval: nowPlaying.interval, countsDown: remaining)
+                .multilineTextAlignment(remaining ? .trailing : .leading)
+        } else {
+            let seconds = remaining ? nowPlaying.duration - nowPlaying.time : nowPlaying.time
+            Text((remaining ? "-" : "") + Duration.seconds(max(0, seconds).rounded(.down))
+                .formatted(.time(pattern: nowPlaying.duration >= 3600 ? .hourMinuteSecond : .minuteSecond)))
         }
     }
 }
 
 private struct Progress: View {
     let nowPlaying: NowPlaying
+    var tint: Color = .red
 
     var body: some View {
         if nowPlaying.isPlaying {
             ProgressView(timerInterval: nowPlaying.interval, countsDown: false) { EmptyView() } currentValueLabel: { EmptyView() }
-                .tint(.red)
+                .tint(tint)
         } else {
-            ProgressView(value: nowPlaying.fraction).tint(.red)
+            ProgressView(value: nowPlaying.fraction).tint(tint)
         }
     }
 }

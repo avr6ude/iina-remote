@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct RootView: View {
-    @State private var discovery = Discovery()
-    @AppStorage("selectedPlayer") private var selectedName = ""
+    private let discovery = Remote.shared.discovery
+    @AppStorage(Remote.selectionKey) private var selectedName = ""
     @State private var wasInBackground = false
     @Environment(\.scenePhase) private var scenePhase
 

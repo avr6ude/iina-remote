@@ -6,7 +6,7 @@ struct RemoteView: View {
     var body: some View {
         Group {
             if let state = player.state {
-                Controls(state: state, send: player.send)
+                Controls(state: state, library: player.library, send: player.send)
             } else {
                 ProgressView("Connecting…")
             }
@@ -18,6 +18,7 @@ struct RemoteView: View {
 
 private struct Controls: View {
     let state: PlayerState
+    let library: Library?
     let send: (Command) -> Void
 
     @State private var scrubTime: Double?
@@ -65,7 +66,55 @@ private struct Controls: View {
                 Picker("Track", selection: binding(state.aid, .aid)) { tracks(.audio) }
                 delayRow(state.audioDelay, .audioDelay)
             }
+
+            if let library {
+                librarySections(library)
+            }
         }
+    }
+
+    @ViewBuilder private func librarySections(_ library: Library) -> some View {
+        if library.playlist.count > 1 {
+            Section("Playlist") {
+                ForEach(Array(library.playlist.enumerated()), id: \.offset) { index, item in
+                    row(item.title, isCurrent: item.current) { send(.playItem(index)) }
+                }
+            }
+        }
+        if !library.chapters.isEmpty {
+            Section("Chapters") {
+                ForEach(Array(library.chapters.enumerated()), id: \.offset) { index, chapter in
+                    row(chapter.title.isEmpty ? "Chapter \(index + 1)" : chapter.title, detail: clock(chapter.start), isCurrent: state.chapter == index) {
+                        send(.playChapter(index))
+                    }
+                }
+            }
+        }
+        if !library.recent.isEmpty {
+            Section("Recent") {
+                ForEach(library.recent) { recent in
+                    Button { send(.openRecent(recent.url)) } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(recent.title).lineLimit(1)
+                            if recent.fraction > 0 { ProgressView(value: recent.fraction) }
+                        }
+                    }
+                    .tint(.primary)
+                }
+            }
+        }
+    }
+
+    private func row(_ title: String, detail: String? = nil, isCurrent: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Text(title).lineLimit(1).fontWeight(isCurrent ? .semibold : .regular)
+                Spacer()
+                if let detail { Text(detail).monospacedDigit().foregroundStyle(.secondary) }
+                if isCurrent { Image(systemName: "speaker.wave.2.fill").foregroundStyle(.tint) }
+            }
+        }
+        .tint(.primary)
     }
 
     private var position: some View {

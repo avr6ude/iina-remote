@@ -29,6 +29,11 @@
 			path = IINARemote;
 			sourceTree = "<group>";
 		};
+		A10000000000000000000040 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,6 +51,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000003 /* IINARemote */,
+				A10000000000000000000040 /* Shared */,
 				A10000000000000000000006 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -75,6 +81,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A10000000000000000000003 /* IINARemote */,
+				A10000000000000000000040 /* Shared */,
 			);
 			name = IINARemote;
 			productName = IINARemote;

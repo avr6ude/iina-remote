@@ -96,7 +96,7 @@ private struct Controls: View {
                     Button { send(.openRecent(recent.url)) } label: {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(recent.title).lineLimit(1)
-                            if recent.fraction > 0 { ProgressView(value: recent.fraction) }
+                            if recent.fraction > 0 { ProgressView(value: recent.fraction).tint(.accentColor) }
                         }
                     }
                     .tint(.primary)

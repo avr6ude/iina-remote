@@ -2,7 +2,7 @@ import ActivityKit
 import Foundation
 import WidgetKit
 
-/// What the widget and Live Activity show: the last state the app saw, shared through the App Group.
+/// What the widget and Live Activity show.
 struct NowPlaying: Codable, Hashable {
     let mac: String
     let title: String
@@ -28,16 +28,18 @@ struct NowPlaying: Codable, Hashable {
 
     var fraction: Double { duration > 0 ? min(1, time / duration) : 0 }
 
-    private static var defaults: UserDefaults? { UserDefaults(suiteName: "group.com.avrdude.iina-remote") }
-    private static let key = "nowPlaying"
-
-    static func load() -> NowPlaying? {
-        defaults?.data(forKey: key).flatMap { try? JSONDecoder().decode(NowPlaying.self, from: $0) }
-    }
-
-    func save() {
-        Self.defaults?.set(try? JSONEncoder().encode(self), forKey: Self.key)
-        WidgetCenter.shared.reloadAllTimelines()
+    /// Asks the network for what's playing right now: the widget has no other way to learn it.
+    @MainActor static func fetch() async -> NowPlaying? {
+        let discovery = Remote.shared.discovery
+        for _ in 0..<80 {
+            let ready = discovery.players.filter { $0.state != nil }
+            if let player = ready.first(where: { !($0.state?.title.isEmpty ?? true) }) ?? (ready.count == discovery.players.count ? ready.first : nil),
+               let state = player.state {
+                return NowPlaying(mac: player.name, state: state)
+            }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        return nil
     }
 }
 
@@ -46,11 +48,11 @@ struct PlaybackAttributes: ActivityAttributes {
 }
 
 extension Remote {
-    /// Saves `state` for the widget and moves the Live Activity along with it; nothing playing ends the activity.
+    /// Refreshes the widget and moves the Live Activity along with `state`; nothing playing ends the activity.
     func publish(_ state: PlayerState, startActivity: Bool = false) {
         guard let mac = selected?.name else { return }
         let nowPlaying = NowPlaying(mac: mac, state: state)
-        nowPlaying.save()
+        WidgetCenter.shared.reloadAllTimelines()
 
         let content = ActivityContent(state: nowPlaying, staleDate: nil)
         let hasActivity = !Activity<PlaybackAttributes>.activities.isEmpty

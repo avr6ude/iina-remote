@@ -29,9 +29,18 @@ struct NowPlayingWidget: Widget {
 
     struct Provider: TimelineProvider {
         func placeholder(in context: Context) -> Entry { Entry(nowPlaying: nil) }
-        func getSnapshot(in context: Context, completion: @escaping (Entry) -> Void) { completion(Entry(nowPlaying: .load())) }
+
+        func getSnapshot(in context: Context, completion: @escaping (Entry) -> Void) {
+            nonisolated(unsafe) let completion = completion
+            Task { @MainActor in completion(Entry(nowPlaying: await NowPlaying.fetch())) }
+        }
+
         func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
-            completion(Timeline(entries: [Entry(nowPlaying: .load())], policy: .never))
+            nonisolated(unsafe) let completion = completion
+            Task { @MainActor in
+                let entry = Entry(nowPlaying: await NowPlaying.fetch())
+                completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(15 * 60))))
+            }
         }
     }
 }
@@ -58,7 +67,7 @@ private struct NowPlayingView: View {
     }
 
     private var title: String {
-        guard let nowPlaying else { return "Open the app to connect to IINA" }
+        guard let nowPlaying else { return "IINA isn't playing on this network" }
         return nowPlaying.title.isEmpty ? "Nothing playing" : nowPlaying.title
     }
 }

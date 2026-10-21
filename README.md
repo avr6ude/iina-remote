@@ -1,7 +1,7 @@
 # IINA Remote
 
-Control [IINA](https://iina.io) from your iPhone or any browser on the same network:
-play, pause, seek, volume, speed, subtitle and audio tracks, delays.
+Control [IINA](https://iina.io) from your iPhone, Apple Watch or any browser on the same network:
+play, pause, seek, volume, speed, subtitle and audio tracks, delays, playlist, chapters and recent files.
 
 <p>
   <img src="screenshots/app.png" width="200" alt="Remote">
@@ -20,7 +20,9 @@ play, pause, seek, volume, speed, subtitle and audio tracks, delays.
 <a href="https://apps.apple.com/app/id6825027883"><img src="https://tools.applemarketingtools.com/api/badges/download-on-the-app-store/black/en-us" height="40" alt="Download on the App Store"></a>
 
 Open a video in IINA and launch the app. It finds every IINA window on your network by itself;
-with more than one, tap the title to switch.
+with more than one, tap the title to switch. Leave the app while something plays to get a Live Activity
+on the lock screen; there's also a Now Playing widget, Siri ("Pause IINA Remote", "Skip forward in
+IINA Remote", "Next episode in IINA Remote") and an Apple Watch app.
 
 **No app?** In IINA choose **Plugin → Show Remote QR Code** and scan the code with any phone.
 On a computer the page also takes Space (play/pause), ←/→ (seek), ↑/↓ (volume) and M (mute).

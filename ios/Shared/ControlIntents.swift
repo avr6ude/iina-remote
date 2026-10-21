@@ -66,7 +66,8 @@ enum ControlError: Error, CustomLocalizedStringResourceConvertible {
 private func control(_ command: (PlayerState) -> Command) async throws -> some IntentResult {
     let remote = Remote.shared
     guard let current = await remote.connectedPlayer()?.state,
-          await remote.perform(command(current)) != nil
+          let state = await remote.perform(command(current))
     else { throw ControlError.noIINA }
+    remote.publish(state)
     return .result()
 }

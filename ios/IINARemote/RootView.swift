@@ -24,7 +24,10 @@ struct RootView: View {
             if !names.contains(selectedName), names.count == 1 { selectedName = names[0] }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background { wasInBackground = true }
+            if phase == .background {
+                wasInBackground = true
+                if let state = Remote.shared.selected?.state { Remote.shared.publish(state, startActivity: true) }
+            }
             if phase == .active, wasInBackground {
                 wasInBackground = false
                 discovery.refresh()

@@ -104,7 +104,7 @@ let socket, s = null, dragging = null;
 function connect() {
   socket = new WebSocket(url);
   socket.binaryType = "arraybuffer";
-  socket.onopen = () => { document.body.classList.remove("offline"); $("status").textContent = `Connected to ${location.hostname}`; };
+  socket.onopen = () => document.body.classList.remove("offline");
   socket.onmessage = (e) => render(JSON.parse(new TextDecoder().decode(e.data)));
   socket.onclose = () => {
     document.body.classList.add("offline");
@@ -137,6 +137,7 @@ function fillTracks(select, tracks, current, offLabel) {
 function render(next) {
   s = next;
   $("title").textContent = s.title || "Nothing playing";
+  $("status").textContent = `Connected to ${s.host || location.hostname}`;
   $("playIcon").setAttribute("d", s.pause ? "M8 5l11 7-11 7z" : "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z");
   const seek = $("seek");
   seek.max = Math.max(1, Math.floor(s.duration));

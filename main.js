@@ -12,9 +12,11 @@ const dir = [".iinaplugin-dev", ".iinaplugin"].map((ext) => base + ext).find((d)
 const conns = new Set();
 let port = WS_PORTS.first;
 let sent = "";
+let host = "";
 
 function state() {
   return {
+    host,
     title: mpv.getString("media-title") || "",
     pause: mpv.getFlag("pause"),
     time: mpv.getNumber("time-pos") || 0,
@@ -103,5 +105,6 @@ menu.addItem(menu.item("Show Remote QR Code", () => {
   loadSidebar();
   sidebar.show();
 }));
+utils.exec("/usr/sbin/scutil", ["--get", "ComputerName"]).then((r) => (host = r.stdout.trim()));
 listen(WS_PORTS.first);
 setInterval(broadcast, 500);

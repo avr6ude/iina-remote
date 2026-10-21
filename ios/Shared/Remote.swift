@@ -7,6 +7,7 @@ final class Remote {
     static let selectionKey = "selectedPlayer"
 
     let discovery = Discovery()
+    @ObservationIgnored var published: NowPlaying?
 
     private init() {}
 

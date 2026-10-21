@@ -47,15 +47,27 @@ struct PlaybackAttributes: ActivityAttributes {
     typealias ContentState = NowPlaying
 }
 
+extension NowPlaying {
+    /// True when `other` shows the same thing this would show now, i.e. nothing but the clock has moved.
+    func matches(_ other: NowPlaying) -> Bool {
+        let expected = time + (isPlaying ? other.date.timeIntervalSince(date) : 0)
+        return mac == other.mac && title == other.title && isPlaying == other.isPlaying
+            && duration == other.duration && abs(expected - other.time) < 2
+    }
+}
+
 extension Remote {
-    /// Refreshes the widget and moves the Live Activity along with `state`; nothing playing ends the activity.
-    func publish(_ state: PlayerState, startActivity: Bool = false) {
+    /// Moves the widget and Live Activity along with `state`; nothing playing ends the activity.
+    /// iOS only lets an app start a Live Activity from the foreground, so callers pass `canStart` only then.
+    func publish(_ state: PlayerState, canStart: Bool = false) {
         guard let mac = selected?.name else { return }
         let nowPlaying = NowPlaying(mac: mac, state: state)
+        let activities = Activity<PlaybackAttributes>.activities
+        if let published, published.matches(nowPlaying), !(canStart && activities.isEmpty) { return }
+        published = nowPlaying
         WidgetCenter.shared.reloadAllTimelines()
 
         let content = ActivityContent(state: nowPlaying, staleDate: nil)
-        let hasActivity = !Activity<PlaybackAttributes>.activities.isEmpty
         let ends = state.title.isEmpty
         Task {
             for activity in Activity<PlaybackAttributes>.activities {
@@ -66,7 +78,7 @@ extension Remote {
                 }
             }
         }
-        if startActivity, !hasActivity, !state.title.isEmpty, !state.pause,
+        if canStart, activities.isEmpty, !state.title.isEmpty, !state.pause,
            ActivityAuthorizationInfo().areActivitiesEnabled {
             _ = try? Activity.request(attributes: PlaybackAttributes(), content: content)
         }

@@ -23,11 +23,11 @@ struct RootView: View {
         .onChange(of: discovery.players.map(\.name), initial: true) { _, names in
             if !names.contains(selectedName), names.count == 1 { selectedName = names[0] }
         }
+        .onChange(of: Remote.shared.selected?.state) { _, state in
+            if let state { Remote.shared.publish(state, canStart: scenePhase == .active) }
+        }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background {
-                wasInBackground = true
-                if let state = Remote.shared.selected?.state { Remote.shared.publish(state, startActivity: true) }
-            }
+            if phase == .background { wasInBackground = true }
             if phase == .active, wasInBackground {
                 wasInBackground = false
                 discovery.refresh()

@@ -5,6 +5,7 @@ const WS_PORTS = { first: 8766, last: 8781 };
 const PROPS = new Set(["pause", "volume", "mute", "sid", "aid", "speed", "sub-delay", "audio-delay", "sub-visibility"]);
 const PLAYLIST = new Set(["playlist-next", "playlist-prev"]);
 const SEEK_MODES = new Set(["relative", "absolute"]);
+const RECENT_LIMIT = 15;
 
 const base = utils.resolvePath("~/Library/Application Support/com.colliderli.iina/plugins/com.avrdude.iina-remote");
 const dir = [".iinaplugin-dev", ".iinaplugin"].map((ext) => base + ext).find((d) => utils.fileInPath(`${d}/main.js`));
@@ -12,10 +13,12 @@ const dir = [".iinaplugin-dev", ".iinaplugin"].map((ext) => base + ext).find((d)
 const conns = new Set();
 let port = WS_PORTS.first;
 let sent = "";
+let sentLibrary = "";
 let host = "";
 
 function state() {
   return {
+    kind: "state",
     host,
     title: mpv.getString("media-title") || "",
     pause: mpv.getFlag("pause"),
@@ -30,9 +33,36 @@ function state() {
     subVisible: mpv.getFlag("sub-visibility"),
     subDelay: mpv.getNumber("sub-delay"),
     audioDelay: mpv.getNumber("audio-delay"),
+    chapter: mpv.getNumber("chapter"),
+    playlistPos: mpv.getNumber("playlist-pos"),
     tracks: (mpv.getNative("track-list") || [])
       .filter((t) => t.type === "audio" || t.type === "sub")
       .map((t) => ({ id: t.id, type: t.type, title: t.title || "", lang: t.lang || "" })),
+  };
+}
+
+const fileTitle = (path) => decodeURIComponent(path.split("/").pop()).replace(/\.[^.]+$/, "");
+
+function recent() {
+  const current = mpv.getString("path");
+  const seen = new Set();
+  return (core.getHistory() || [])
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .filter((h) => {
+      if (seen.has(h.url) || decodeURIComponent(h.url).replace(/^file:\/\//, "") === current) return false;
+      seen.add(h.url);
+      return true;
+    })
+    .slice(0, RECENT_LIMIT)
+    .map((h) => ({ title: fileTitle(h.name), url: h.url, progress: h.progress || 0, duration: h.duration || 0 }));
+}
+
+function library() {
+  return {
+    kind: "library",
+    playlist: (mpv.getNative("playlist") || []).map((e) => ({ title: fileTitle(e.filename), current: !!e.current })),
+    chapters: (core.getChapters() || []).map((c) => ({ title: c.title || "", start: c.start })),
+    recent: recent(),
   };
 }
 
@@ -43,19 +73,35 @@ function handle({ set, value, cmd, args = [] }) {
     mpv.command("seek", [String(args[0]), args[1]]);
   } else if (PLAYLIST.has(cmd)) {
     mpv.command(cmd, []);
+  } else if (cmd === "playlist-play-index" && Number.isInteger(args[0])) {
+    mpv.command("playlist-play-index", [String(args[0])]);
+  } else if (cmd === "chapter" && Number.isInteger(args[0])) {
+    mpv.set("chapter", String(args[0]));
+  } else if (cmd === "open-recent" && recent().some((r) => r.url === args[0])) {
+    core.open(args[0]);
   } else {
     return;
   }
-  sent = "";
+  sent = sentLibrary = "";
   broadcast();
+}
+
+function send(json) {
+  for (const conn of conns) ws.sendText(conn, json).catch(() => conns.delete(conn));
 }
 
 function broadcast() {
   if (!conns.size) return;
   const json = JSON.stringify(state());
   if (json === sent) return;
-  sent = json;
-  for (const conn of conns) ws.sendText(conn, json).catch(() => conns.delete(conn));
+  send((sent = json));
+}
+
+function broadcastLibrary() {
+  if (!conns.size) return;
+  const json = JSON.stringify(library());
+  if (json === sentLibrary) return;
+  send((sentLibrary = json));
 }
 
 function listen(p) {
@@ -82,7 +128,8 @@ ws.onStateUpdate((s, err) => {
 ws.onConnectionStateUpdate((conn, s) => {
   if (s === "ready") {
     conns.add(conn);
-    sent = "";
+    sent = sentLibrary = "";
+    broadcastLibrary();
   } else if (s === "failed" || s === "cancelled") {
     conns.delete(conn);
   }
@@ -108,3 +155,4 @@ menu.addItem(menu.item("Show Remote QR Code", () => {
 utils.exec("/usr/sbin/scutil", ["--get", "ComputerName"]).then((r) => (host = r.stdout.trim()));
 listen(WS_PORTS.first);
 setInterval(broadcast, 500);
+setInterval(broadcastLibrary, 2000);

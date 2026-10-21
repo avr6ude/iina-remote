@@ -51,6 +51,13 @@
   .segmented { display: flex; flex: 1; background: var(--soft); border-radius: 10px; padding: 3px; }
   .segmented button { flex: 1; height: 38px; min-width: 0; border-radius: 8px; font-size: 15px; font-variant-numeric: tabular-nums; }
   .segmented button.on { background: var(--bg); box-shadow: 0 1px 3px #0002; font-weight: 600; }
+  .list { list-style: none; margin: 0; padding: 0; }
+  .list button { display: flex; align-items: center; gap: 12px; width: 100%; height: auto; min-height: 48px; padding: 8px 0; text-align: left; border-radius: 0; }
+  .list .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .list .meta { color: var(--dim); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .list button.on .name { color: var(--accent); font-weight: 600; }
+  .list progress { width: 56px; height: 4px; accent-color: var(--accent); }
+  section[hidden] { display: none; }
 </style>
 </head>
 <body class="offline">
@@ -92,6 +99,9 @@
     <h2>Speed</h2>
     <div class="row"><div class="segmented" id="speeds"></div></div>
   </section>
+  <section id="playlistSection" hidden><h2>Playlist</h2><ul class="list" id="playlist"></ul></section>
+  <section id="chaptersSection" hidden><h2>Chapters</h2><ul class="list" id="chapters"></ul></section>
+  <section id="recentSection" hidden><h2>Recent</h2><ul class="list" id="recent"></ul></section>
 </main>
 
 <script>
@@ -99,13 +109,17 @@ const $ = (id) => document.getElementById(id);
 const url = `ws://${location.hostname}:${location.hash.slice(1) || 8766}`;
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const CHEVRON = { "-1": "M13 6l-6 6 6 6M19 6l-6 6 6 6", "-0.1": "M15 6l-6 6 6 6", "0.1": "M9 6l6 6-6 6", "1": "M5 6l6 6-6 6M11 6l6 6-6 6" };
-let socket, s = null, dragging = null;
+let socket, s = null, lib = null, dragging = null;
 
 function connect() {
   socket = new WebSocket(url);
   socket.binaryType = "arraybuffer";
   socket.onopen = () => document.body.classList.remove("offline");
-  socket.onmessage = (e) => render(JSON.parse(new TextDecoder().decode(e.data)));
+  socket.onmessage = (e) => {
+    const message = JSON.parse(new TextDecoder().decode(e.data));
+    if (message.kind === "state") render(message);
+    else if (message.kind === "library") renderLibrary(message);
+  };
   socket.onclose = () => {
     document.body.classList.add("offline");
     $("status").textContent = "Can’t reach IINA. Reconnecting…";
@@ -134,7 +148,34 @@ function fillTracks(select, tracks, current, offLabel) {
   select.value = current;
 }
 
+function fillList(id, items, onTap) {
+  $(`${id}Section`).hidden = !items.length;
+  $(id).replaceChildren(...items.map((item, index) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.className = item.on ? "on" : "";
+    b.innerHTML = '<span class="name"></span>';
+    b.firstChild.textContent = item.name;
+    if (item.meta) b.insertAdjacentHTML("beforeend", `<span class="meta">${item.meta}</span>`);
+    if (item.progress) b.insertAdjacentHTML("beforeend", `<progress max="1" value="${item.progress}"></progress>`);
+    b.onclick = () => onTap(item, index);
+    li.append(b);
+    return li;
+  }));
+}
+
+function renderLibrary(library) {
+  lib = library;
+  fillList("playlist", library.playlist.length > 1 ? library.playlist.map((p) => ({ name: p.title, on: p.current })) : [],
+    (_, i) => send({ cmd: "playlist-play-index", args: [i] }));
+  fillList("chapters", library.chapters.map((c, i) => ({ name: c.title || `Chapter ${i + 1}`, meta: clock(c.start), on: s && s.chapter === i })),
+    (_, i) => send({ cmd: "chapter", args: [i] }));
+  fillList("recent", library.recent.map((r) => ({ name: r.title, url: r.url, progress: r.duration ? Math.min(1, r.progress / r.duration) : 0 })),
+    (item) => send({ cmd: "open-recent", args: [item.url] }));
+}
+
 function render(next) {
+  const chapterChanged = !s || s.chapter !== next.chapter;
   s = next;
   $("title").textContent = s.title || "Nothing playing";
   $("status").textContent = `Connected to ${s.host || location.hostname}`;
@@ -156,6 +197,7 @@ function render(next) {
     b.textContent = `${(s[b.parentNode.parentNode.dataset.key] || 0).toFixed(1)} s`;
   });
   document.querySelectorAll("#speeds button").forEach((b) => b.classList.toggle("on", Math.abs(+b.dataset.speed - s.speed) < 0.001));
+  if (chapterChanged && lib) renderLibrary(lib);
 }
 
 for (const row of document.querySelectorAll("[data-prop]")) {

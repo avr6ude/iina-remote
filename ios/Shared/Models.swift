@@ -1,8 +1,8 @@
 import Foundation
 
-struct PlayerState: Decodable, Equatable {
-    struct Track: Decodable, Equatable, Identifiable {
-        enum Kind: String, Decodable { case audio, sub }
+struct PlayerState: Codable, Equatable {
+    struct Track: Codable, Equatable, Identifiable {
+        enum Kind: String, Codable { case audio, sub }
 
         let id: Int
         let type: Kind
@@ -75,8 +75,8 @@ enum Message: Decodable {
     }
 }
 
-enum Command {
-    enum Property: String {
+enum Command: Codable {
+    enum Property: String, Codable {
         case pause, volume, mute, sid, aid, speed
         case subDelay = "sub-delay"
         case audioDelay = "audio-delay"

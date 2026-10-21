@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A1000000000000000000005B /* Widgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000050 /* Widgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A1000000000000000000006B /* Watch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A10000000000000000000060 /* Watch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -17,6 +18,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = A10000000000000000000053;
 			remoteInfo = Widgets;
+		};
+		A1000000000000000000006D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000009 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000063;
+			remoteInfo = Watch;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -32,10 +40,22 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1000000000000000000006A /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				A1000000000000000000006B /* Watch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A10000000000000000000001 /* IINA Remote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "IINA Remote.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000060 /* Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Watch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000050 /* Widgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Widgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -56,6 +76,17 @@
 			);
 			target = A10000000000000000000053 /* Widgets */;
 		};
+		A10000000000000000000062 /* Exceptions for "Shared" folder in "Watch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ControlIntents.swift,
+				Discovery.swift,
+				NowPlaying.swift,
+				Player.swift,
+				Remote.swift,
+			);
+			target = A10000000000000000000063 /* Watch */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +100,9 @@
 		};
 		A10000000000000000000040 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A10000000000000000000062 /* Exceptions for "Shared" folder in "Watch" target */,
+			);
 			path = Shared;
 			sourceTree = "<group>";
 		};
@@ -78,6 +112,11 @@
 				A10000000000000000000052 /* Exceptions for "Widgets" folder in "Widgets" target */,
 			);
 			path = Widgets;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000061 /* Watch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Watch;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -97,6 +136,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000065 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -106,6 +152,7 @@
 				A10000000000000000000003 /* IINARemote */,
 				A10000000000000000000040 /* Shared */,
 				A10000000000000000000051 /* Widgets */,
+				A10000000000000000000061 /* Watch */,
 				A10000000000000000000006 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -115,6 +162,7 @@
 			children = (
 				A10000000000000000000001 /* IINA Remote.app */,
 				A10000000000000000000050 /* Widgets.appex */,
+				A10000000000000000000060 /* Watch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -130,11 +178,13 @@
 				A10000000000000000000004 /* Frameworks */,
 				A10000000000000000000008 /* Resources */,
 				A1000000000000000000005A /* Embed Foundation Extensions */,
+				A1000000000000000000006A /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				A1000000000000000000005C /* PBXTargetDependency */,
+				A1000000000000000000006C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A10000000000000000000003 /* IINARemote */,
@@ -166,6 +216,27 @@
 			productReference = A10000000000000000000050 /* Widgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		A10000000000000000000063 /* Watch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000067 /* Build configuration list for PBXNativeTarget "Watch" */;
+			buildPhases = (
+				A10000000000000000000064 /* Sources */,
+				A10000000000000000000065 /* Frameworks */,
+				A10000000000000000000066 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000040 /* Shared */,
+				A10000000000000000000061 /* Watch */,
+			);
+			name = Watch;
+			productName = Watch;
+			productReference = A10000000000000000000060 /* Watch.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -192,6 +263,7 @@
 			targets = (
 				A10000000000000000000010 /* IINARemote */,
 				A10000000000000000000053 /* Widgets */,
+				A10000000000000000000063 /* Watch */,
 			);
 		};
 /* End PBXProject section */
@@ -205,6 +277,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000000000000000000056 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000066 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -228,6 +307,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000064 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -235,6 +321,11 @@
 			isa = PBXTargetDependency;
 			target = A10000000000000000000053 /* Widgets */;
 			targetProxy = A1000000000000000000005D /* PBXContainerItemProxy */;
+		};
+		A1000000000000000000006C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000063 /* Watch */;
+			targetProxy = A1000000000000000000006D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -383,6 +474,54 @@
 			};
 			name = Release;
 		};
+		A10000000000000000000068 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "IINA Remote";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.avrdude.iina-remote";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.avrdude.iina-remote.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		A10000000000000000000069 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "IINA Remote";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.avrdude.iina-remote";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.avrdude.iina-remote.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -409,6 +548,15 @@
 			buildConfigurations = (
 				A10000000000000000000058 /* Debug */,
 				A10000000000000000000059 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000067 /* Build configuration list for PBXNativeTarget "Watch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000068 /* Debug */,
+				A10000000000000000000069 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -132,7 +132,9 @@ private struct SidePanel: View {
             }
         }
         .pickerStyle(.menu)
+        .tint(.primary)
         .scrollContentBackground(.hidden)
+        .scrollEdgeEffectHidden(true, for: .top)
     }
 
     private func selectSubtitles(_ id: String) {

@@ -69,7 +69,7 @@ extension NowPlaying {
 }
 
 extension Remote {
-    /// Moves the widget and Live Activity along with `state`; nothing playing ends the activity.
+    /// Moves the widget and Live Activity along with `state`; nothing playing, or the setting turned off, ends the activity.
     /// iOS only lets an app start a Live Activity from the foreground, so callers pass `canStart` only then.
     func publish(_ state: PlayerState, canStart: Bool = false) {
         guard let selected else { return }
@@ -80,7 +80,8 @@ extension Remote {
         WidgetCenter.shared.reloadAllTimelines()
 
         let content = ActivityContent(state: nowPlaying, staleDate: nil)
-        let ends = state.title.isEmpty
+        let showsActivity = UserDefaults.standard.bool(forKey: Self.liveActivityKey)
+        let ends = state.title.isEmpty || !showsActivity
         Task {
             for activity in Activity<PlaybackAttributes>.activities {
                 if ends {
@@ -90,7 +91,7 @@ extension Remote {
                 }
             }
         }
-        if canStart, activities.isEmpty, !state.title.isEmpty, !state.pause,
+        if canStart, showsActivity, activities.isEmpty, !state.title.isEmpty, !state.pause,
            ActivityAuthorizationInfo().areActivitiesEnabled {
             _ = try? Activity.request(attributes: PlaybackAttributes(), content: content)
         }

@@ -3,6 +3,8 @@ import SwiftUI
 struct RemoteView: View {
     let player: Player
 
+    @AppStorage(Remote.liveActivityKey) private var showsLiveActivity = false
+
     var body: some View {
         Group {
             if let state = player.state, !state.title.isEmpty {
@@ -15,6 +17,11 @@ struct RemoteView: View {
         }
         .navigationTitle(player.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            Menu("More", systemImage: "ellipsis") {
+                Toggle("Live Activity", systemImage: "platter.filled.bottom.iphone", isOn: $showsLiveActivity)
+            }
+        }
     }
 }
 

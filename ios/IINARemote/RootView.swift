@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     private let discovery = Remote.shared.discovery
     @AppStorage(Remote.selectionKey) private var selectedName = ""
+    @AppStorage(Remote.liveActivityKey) private var showsLiveActivity = false
     @State private var wasInBackground = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -25,6 +26,10 @@ struct RootView: View {
         }
         .onChange(of: Remote.shared.selected?.state) { publish() }
         .onChange(of: Remote.shared.selected?.artwork?.tint) { publish() }
+        .onChange(of: showsLiveActivity) {
+            Remote.shared.published = nil
+            publish()
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { wasInBackground = true }
             if phase == .active, wasInBackground {

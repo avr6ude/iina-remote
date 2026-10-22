@@ -5,6 +5,7 @@ import Observation
 final class Remote {
     static let shared = Remote()
     static let selectionKey = "selectedPlayer"
+    static let liveActivityKey = "liveActivity"
 
     let discovery = Discovery()
     @ObservationIgnored var published: NowPlaying?

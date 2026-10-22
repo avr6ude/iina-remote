@@ -4,9 +4,9 @@ Control [IINA](https://iina.io) from your iPhone, Apple Watch or any browser on 
 play, pause, seek, volume, speed, subtitle and audio tracks, delays, playlist, chapters and recent files.
 
 <p>
-  <img src="screenshots/app.png" width="200" alt="Remote">
-  <img src="screenshots/widgets.png" width="200" alt="Widgets">
-  <img src="screenshots/web.png" width="200" alt="Browser remote">
+  <img src="screenshots/app.png" width="260" alt="Remote">
+  <img src="screenshots/widgets.png" width="260" alt="Widgets">
+  <img src="screenshots/web.png" width="260" alt="Browser remote">
 </p>
 
 ## Install
@@ -27,7 +27,7 @@ IINA Remote", "Next episode in IINA Remote") and an Apple Watch app.
 **No app?** In IINA choose **Plugin → Show Remote QR Code** and scan the code with any phone.
 On a computer the page also takes Space (play/pause), ←/→ (seek), ↑/↓ (volume) and M (mute).
 
-<img src="screenshots/iina.png" width="600" alt="QR code in IINA's sidebar">
+<img src="screenshots/iina.png" width="800" alt="QR code in IINA's sidebar">
 
 ## Development
 

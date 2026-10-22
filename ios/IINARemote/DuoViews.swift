@@ -13,9 +13,9 @@ struct DuoPlayer: View {
                 Tabletop(player: player, state: state, fold: fold.frame)
             } else if proxy.size.width > 600 {
                 ArrangementView {
-                    NowPlayingScreen(player: player, state: state, showsBackdrop: false)
+                    NowPlayingScreen(player: player, state: state, showsBackdrop: false, showsPanelBar: false)
                 } secondary: {
-                    LibraryList(state: state, library: player.library, send: player.send, inline: true)
+                    SidePanel(player: player, state: state)
                 }
                 .arrangementViewStyle(.split)
                 .background { Backdrop(artwork: player.artwork) }
@@ -79,5 +79,53 @@ private struct Tabletop: View {
         }
         .padding(.horizontal, 40)
         .padding(.vertical, 24)
+    }
+}
+
+/// Everything the player's bottom bar opens as sheets, always on screen next to it.
+private struct SidePanel: View {
+    enum Tab: String {
+        case playlist = "Playlist"
+        case chapters = "Chapters"
+        case subtitles = "Subtitles"
+        case audio = "Audio"
+        case recent = "Recent"
+    }
+
+    let player: Player
+    let state: PlayerState
+
+    @State private var tab: Tab?
+
+    private var tabs: [Tab] {
+        let library = player.library
+        return [
+            (library?.playlist.count ?? 0) > 1 ? .playlist : nil,
+            library?.chapters.isEmpty == false ? .chapters : nil,
+            .subtitles,
+            .audio,
+            library?.recent.isEmpty == false ? .recent : nil,
+        ].compactMap(\.self)
+    }
+
+    var body: some View {
+        let tab = tab.flatMap { tabs.contains($0) ? $0 : nil } ?? tabs[0]
+        Group {
+            switch tab {
+            case .playlist: LibraryList(state: state, library: player.library, send: player.send, inline: true, only: .playlist)
+            case .chapters: LibraryList(state: state, library: player.library, send: player.send, inline: true, only: .chapters)
+            case .recent: LibraryList(state: state, library: player.library, send: player.send, inline: true, only: .recent)
+            case .subtitles: TracksForm(kind: .sub, state: state, send: player.send, inline: true)
+            case .audio: TracksForm(kind: .audio, state: state, send: player.send, inline: true)
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Picker("Show", selection: Binding(get: { tab }, set: { self.tab = $0 })) {
+                ForEach(tabs, id: \.self) { Text($0.rawValue) }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 8)
+        }
     }
 }

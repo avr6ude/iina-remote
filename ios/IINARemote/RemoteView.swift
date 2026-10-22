@@ -43,6 +43,7 @@ struct NowPlayingScreen: View {
     let player: Player
     let state: PlayerState
     var showsBackdrop = true
+    var showsPanelBar = true
 
     @State private var panel: Panel?
 
@@ -69,7 +70,7 @@ struct NowPlayingScreen: View {
             Transport(player: player, state: state).padding(.vertical, 24)
             Volume(state: state, send: player.send)
             Spacer(minLength: 24)
-            PanelBar(state: state, send: player.send, panel: $panel)
+            if showsPanelBar { PanelBar(state: state, send: player.send, panel: $panel) }
         }
         .padding(.horizontal, 28)
         .padding(.bottom, 8)
@@ -138,7 +139,7 @@ struct PanelBar: View {
     @Binding var panel: Panel?
     var showsLibrary = true
 
-    private static let speeds = [0.5, 0.75, 1, 1.25, 1.5, 2]
+    static let speeds = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
     var body: some View {
         HStack {
@@ -323,16 +324,21 @@ struct PanelSheet: View {
     }
 }
 
-private struct TracksForm: View {
+struct TracksForm: View {
     let kind: PlayerState.Track.Kind
     let state: PlayerState
     let send: (Command) -> Void
+    /// Shown in a pane over the artwork backdrop: see-through rows, and speed under audio.
+    var inline = false
 
     var body: some View {
         let tracks = state.tracks.filter { $0.type == kind }
         Form {
             if kind == .sub {
-                Toggle("Show Subtitles", isOn: Binding(get: { state.subVisible }, set: { send(.set(.subVisibility, $0)) }))
+                Section {
+                    Toggle("Show Subtitles", isOn: Binding(get: { state.subVisible }, set: { send(.set(.subVisibility, $0)) }))
+                }
+                .panelRows(inline)
             }
             Section("Track") {
                 if kind == .audio, tracks.isEmpty {
@@ -347,12 +353,25 @@ private struct TracksForm: View {
                     .labelsHidden()
                 }
             }
+            .panelRows(inline)
             Section("Delay") {
                 DelayRow(value: kind == .sub ? state.subDelay : state.audioDelay, property: kind == .sub ? .subDelay : .audioDelay, send: send)
+            }
+            .panelRows(inline)
+            if inline, kind == .audio {
+                Section("Speed") {
+                    Picker("Speed", selection: Binding(get: { state.speed }, set: { send(.set(.speed, $0)) })) {
+                        ForEach(PanelBar.speeds, id: \.self) { Text("\($0.formatted())×").tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                }
+                .panelRows(inline)
             }
         }
         .navigationTitle(kind == .sub ? "Subtitles" : "Audio")
         .navigationBarTitleDisplayMode(.inline)
+        .panelStyle(inline)
     }
 }
 
@@ -396,8 +415,10 @@ struct LibraryList: View {
     let state: PlayerState
     let library: Library?
     let send: (Command) -> Void
-    /// Shown in a pane next to the player instead of a sheet: tabs above the list, no navigation bar.
+    /// Shown in a pane next to the player instead of a sheet: no navigation bar, see-through rows.
     var inline = false
+    /// Shows just this list, for a container that offers its own tabs.
+    var only: Tab?
 
     @State private var tab: Tab?
     @Environment(\.dismiss) private var dismiss
@@ -410,9 +431,7 @@ struct LibraryList: View {
 
     var body: some View {
         if inline {
-            list
-                .scrollContentBackground(.hidden)
-                .safeAreaInset(edge: .top) { if tabs.count > 1 { picker.padding(.horizontal, 20).padding(.vertical, 8) } }
+            list.panelStyle(true)
         } else {
             list
                 .navigationTitle((tab ?? tabs.first)?.rawValue ?? "Up Next")
@@ -431,32 +450,35 @@ struct LibraryList: View {
     }
 
     private var list: some View {
-        let tab = tab ?? tabs.first
+        let tab = only ?? tab ?? tabs.first
         return List {
-            if let library {
-                switch tab {
-                case .playlist:
-                    ForEach(Array(library.playlist.enumerated()), id: \.offset) { index, item in
-                        row(item.title, number: index + 1, isCurrent: item.current) { send(.playItem(index)) }
-                    }
-                case .chapters:
-                    ForEach(Array(library.chapters.enumerated()), id: \.offset) { index, chapter in
-                        row(chapter.title.isEmpty ? "Chapter \(index + 1)" : chapter.title, number: index + 1,
-                            time: clock(chapter.start, of: state.duration), isCurrent: state.chapter == index) {
-                            send(.playChapter(index))
+            Section {
+                if let library {
+                    switch tab {
+                    case .playlist:
+                        ForEach(Array(library.playlist.enumerated()), id: \.offset) { index, item in
+                            row(item.title, number: index + 1, isCurrent: item.current) { send(.playItem(index)) }
                         }
-                    }
-                case .recent:
-                    ForEach(library.recent) { recent in
-                        RecentRow(recent: recent) {
-                            send(.openRecent(recent.url))
-                            dismiss()
+                    case .chapters:
+                        ForEach(Array(library.chapters.enumerated()), id: \.offset) { index, chapter in
+                            row(chapter.title.isEmpty ? "Chapter \(index + 1)" : chapter.title, number: index + 1,
+                                time: clock(chapter.start, of: state.duration), isCurrent: state.chapter == index) {
+                                send(.playChapter(index))
+                            }
                         }
+                    case .recent:
+                        ForEach(library.recent) { recent in
+                            RecentRow(recent: recent) {
+                                send(.openRecent(recent.url))
+                                dismiss()
+                            }
+                        }
+                    case nil:
+                        Text("Nothing up next").foregroundStyle(.secondary)
                     }
-                case nil:
-                    Text("Nothing up next").foregroundStyle(.secondary)
                 }
             }
+            .panelRows(inline)
         }
     }
 
@@ -518,4 +540,20 @@ private struct Idle: View {
 
 func clock(_ seconds: Double, of duration: Double) -> String {
     Duration.seconds(max(0, seconds).rounded(.down)).formatted(.time(pattern: duration >= 3600 ? .hourMinuteSecond : .minuteSecond))
+}
+
+extension View {
+    /// See-through rows over the artwork backdrop; it only reaches rows, so apply it to each section.
+    func panelRows(_ isOn: Bool) -> some View {
+        listRowBackground(isOn ? Color.white.opacity(0.1) : nil)
+    }
+
+    /// Lets the artwork backdrop show through a list or form.
+    @ViewBuilder func panelStyle(_ isOn: Bool) -> some View {
+        if isOn {
+            scrollContentBackground(.hidden)
+        } else {
+            self
+        }
+    }
 }

@@ -42,10 +42,9 @@ enum Panel: String, Identifiable {
 struct NowPlayingScreen: View {
     let player: Player
     let state: PlayerState
+    var showsBackdrop = true
 
     @State private var panel: Panel?
-
-    private static let speeds = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -63,72 +62,92 @@ struct NowPlayingScreen: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(state.title).font(.title3.weight(.semibold)).lineLimit(2)
-                if let subtitle { Text(subtitle).foregroundStyle(.secondary).lineLimit(1) }
+                if let subtitle = player.subtitle(for: state) { Text(subtitle).foregroundStyle(.secondary).lineLimit(1) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Scrubber(state: state, send: player.send).padding(.top, 18)
-            transport.padding(.vertical, 24)
+            Transport(player: player, state: state).padding(.vertical, 24)
             Volume(state: state, send: player.send)
             Spacer(minLength: 24)
-            bottomBar
+            PanelBar(state: state, send: player.send, panel: $panel)
         }
         .padding(.horizontal, 28)
         .padding(.bottom, 8)
-        .background { Backdrop(artwork: player.artwork) }
+        .background { if showsBackdrop { Backdrop(artwork: player.artwork) } }
         .preferredColorScheme(.dark)
         .sheet(item: $panel) { panel in
             PanelSheet(panel: panel, player: player).presentationDetents([.medium, .large])
         }
     }
 
-    private var hasPlaylist: Bool { (player.library?.playlist.count ?? 0) > 1 }
+}
 
-    private var subtitle: String? {
-        if let library = player.library, let index = state.chapter, library.chapters.indices.contains(index) {
+extension Player {
+    var hasPlaylist: Bool { (library?.playlist.count ?? 0) > 1 }
+
+    /// The chapter, or the position in the playlist, shown under the title.
+    func subtitle(for state: PlayerState) -> String? {
+        if let library, let index = state.chapter, library.chapters.indices.contains(index) {
             let title = library.chapters[index].title
             return title.isEmpty ? "Chapter \(index + 1)" : title
         }
-        if hasPlaylist, let library = player.library, let position = state.playlistPos {
+        if hasPlaylist, let library, let position = state.playlistPos {
             return "\(position + 1) of \(library.playlist.count)"
         }
         return nil
     }
+}
 
-    private var transport: some View {
+struct Transport: View {
+    let player: Player
+    let state: PlayerState
+    var scale: CGFloat = 1
+
+    var body: some View {
         HStack {
             Button("Previous", systemImage: "backward.end.fill") { player.send(.previous) }
-                .font(.title2)
-                .disabled(!hasPlaylist)
+                .font(.system(size: 22 * scale))
+                .disabled(!player.hasPlaylist)
             Spacer()
             Button("Back 10 Seconds", systemImage: "gobackward.10") { player.send(.seek(-10, absolute: false)) }
-                .font(.title)
+                .font(.system(size: 28 * scale))
             Spacer()
             Button(state.pause ? "Play" : "Pause", systemImage: state.pause ? "play.fill" : "pause.fill") {
                 player.send(.set(.pause, !state.pause))
             }
-            .font(.system(size: 50))
+            .font(.system(size: 50 * scale))
             .contentTransition(.symbolEffect(.replace))
-            .frame(width: 72, height: 72)
+            .frame(width: 72 * scale, height: 72 * scale)
             Spacer()
             Button("Forward 30 Seconds", systemImage: "goforward.30") { player.send(.seek(30, absolute: false)) }
-                .font(.title)
+                .font(.system(size: 28 * scale))
             Spacer()
             Button("Next", systemImage: "forward.end.fill") { player.send(.next) }
-                .font(.title2)
-                .disabled(!hasPlaylist)
+                .font(.system(size: 22 * scale))
+                .disabled(!player.hasPlaylist)
         }
         .labelStyle(.iconOnly)
         .buttonStyle(PressStyle())
     }
+}
 
-    private var bottomBar: some View {
+/// Subtitles, audio, speed and Up Next along the bottom of the player.
+struct PanelBar: View {
+    let state: PlayerState
+    let send: (Command) -> Void
+    @Binding var panel: Panel?
+    var showsLibrary = true
+
+    private static let speeds = [0.5, 0.75, 1, 1.25, 1.5, 2]
+
+    var body: some View {
         HStack {
-            panelButton(.subtitles, state.sid != "no" && state.subVisible ? "captions.bubble.fill" : "captions.bubble")
+            button(.subtitles, state.sid != "no" && state.subVisible ? "captions.bubble.fill" : "captions.bubble")
             Spacer()
-            panelButton(.audio, "waveform")
+            button(.audio, "waveform")
             Spacer()
             Menu {
-                Picker("Speed", selection: Binding(get: { state.speed }, set: { player.send(.set(.speed, $0)) })) {
+                Picker("Speed", selection: Binding(get: { state.speed }, set: { send(.set(.speed, $0)) })) {
                     ForEach(Self.speeds, id: \.self) { Text("\($0.formatted())×").tag($0) }
                 }
             } label: {
@@ -138,8 +157,10 @@ struct NowPlayingScreen: View {
                     .frame(minWidth: 44, minHeight: 32)
             }
             .accessibilityLabel("Speed")
-            Spacer()
-            panelButton(.library, "list.bullet")
+            if showsLibrary {
+                Spacer()
+                button(.library, "list.bullet")
+            }
         }
         .font(.title3)
         .foregroundStyle(.secondary)
@@ -148,7 +169,7 @@ struct NowPlayingScreen: View {
         .padding(.horizontal, 8)
     }
 
-    private func panelButton(_ panel: Panel, _ symbol: String) -> some View {
+    private func button(_ panel: Panel, _ symbol: String) -> some View {
         Button(panel.rawValue, systemImage: symbol) { self.panel = panel }
     }
 }
@@ -365,7 +386,7 @@ private struct DelayRow: View {
     }
 }
 
-private struct LibraryList: View {
+struct LibraryList: View {
     enum Tab: String, CaseIterable {
         case playlist = "Playlist"
         case chapters = "Chapters"
@@ -375,6 +396,8 @@ private struct LibraryList: View {
     let state: PlayerState
     let library: Library?
     let send: (Command) -> Void
+    /// Shown in a pane next to the player instead of a sheet: tabs above the list, no navigation bar.
+    var inline = false
 
     @State private var tab: Tab?
     @Environment(\.dismiss) private var dismiss
@@ -386,8 +409,30 @@ private struct LibraryList: View {
     }
 
     var body: some View {
+        if inline {
+            list
+                .scrollContentBackground(.hidden)
+                .safeAreaInset(edge: .top) { if tabs.count > 1 { picker.padding(.horizontal, 20).padding(.vertical, 8) } }
+        } else {
+            list
+                .navigationTitle((tab ?? tabs.first)?.rawValue ?? "Up Next")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    if tabs.count > 1 { ToolbarItem(placement: .principal) { picker.fixedSize() } }
+                }
+        }
+    }
+
+    private var picker: some View {
+        Picker("Show", selection: Binding(get: { tab ?? tabs.first ?? .recent }, set: { tab = $0 })) {
+            ForEach(tabs, id: \.self) { Text($0.rawValue) }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    private var list: some View {
         let tab = tab ?? tabs.first
-        List {
+        return List {
             if let library {
                 switch tab {
                 case .playlist:
@@ -410,19 +455,6 @@ private struct LibraryList: View {
                     }
                 case nil:
                     Text("Nothing up next").foregroundStyle(.secondary)
-                }
-            }
-        }
-        .navigationTitle(tab?.rawValue ?? "Up Next")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if tabs.count > 1 {
-                ToolbarItem(placement: .principal) {
-                    Picker("Show", selection: Binding(get: { tab ?? .recent }, set: { self.tab = $0 })) {
-                        ForEach(tabs, id: \.self) { Text($0.rawValue) }
-                    }
-                    .pickerStyle(.segmented)
-                    .fixedSize()
                 }
             }
         }

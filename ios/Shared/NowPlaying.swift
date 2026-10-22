@@ -40,8 +40,11 @@ struct NowPlaying: Codable, Hashable {
     /// Asks the network for what's playing right now and its frame: the widget has no other way to learn them.
     @MainActor static func fetch() async -> (NowPlaying, Artwork?)? {
         let discovery = Remote.shared.discovery
+        // The extension can outlive a refresh with its connections frozen, so only states that arrive after reconnecting count.
+        let stale = Dictionary(uniqueKeysWithValues: discovery.players.map { ($0.name, $0.revision) })
+        discovery.refresh()
         for _ in 0..<80 {
-            let ready = discovery.players.filter { $0.state != nil }
+            let ready = discovery.players.filter { $0.state != nil && $0.revision != stale[$0.name] }
             if let player = ready.first(where: { !($0.state?.title.isEmpty ?? true) }) ?? (ready.count == discovery.players.count ? ready.first : nil),
                let state = player.state {
                 for _ in 0..<60 where ((state.frame ?? 0) > 0 && player.artwork == nil) || player.library == nil {

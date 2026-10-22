@@ -208,9 +208,14 @@ function renderSubtitle() {
   $("subtitle").textContent = chapter ? `${s.host} – ${chapter.title || `Chapter ${s.chapter + 1}`}` : s.host || location.hostname;
 }
 
+const languages = new Intl.DisplayNames([navigator.language], { type: "language" });
+function language(code) {
+  try { return code && languages.of(code); } catch { return code.toUpperCase(); }
+}
+
 const tracks = (type, current, off) => (off ? [{ id: "no", name: "Off", on: current === "no" }] : []).concat(
   s.tracks.filter((t) => t.type === type).map((t) => ({
-    id: String(t.id), name: [t.title, t.lang.toUpperCase()].filter(Boolean).join(", ") || `Track ${t.id}`, on: String(t.id) === current,
+    id: String(t.id), name: [t.title, language(t.lang)].filter(Boolean).join(", ") || `Track ${t.id}`, on: String(t.id) === current,
   })));
 
 function render(next) {

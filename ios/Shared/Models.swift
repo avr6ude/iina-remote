@@ -10,7 +10,8 @@ struct PlayerState: Codable, Equatable {
         let lang: String
 
         var label: String {
-            let parts = [title, lang.uppercased()].filter { !$0.isEmpty }
+            let language = lang.isEmpty ? "" : Locale.current.localizedString(forLanguageCode: lang) ?? lang.uppercased()
+            let parts = [title, language].filter { !$0.isEmpty }
             return parts.isEmpty ? "Track \(id)" : parts.joined(separator: " · ")
         }
     }

@@ -10,119 +10,119 @@
 <link rel="icon" href="/icon.png">
 <title>IINA Remote</title>
 <style>
-  :root { --bg: #fafafa; --fg: #18181b; --dim: #71717a; --line: #e4e4e7; --soft: #f0f0f2; --live: #16a34a; --off: #dc2626; }
+  :root { --page: #eceef1; --card: #fff; --ink: #1f2228; --muted: #8b9099; --line: #dfe2e6; --well: #d3d6db; --well-ink: #1f2228; }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #131315; --fg: #f4f4f5; --dim: #a1a1aa; --line: #2e2e33; --soft: #1f1f23; }
+    :root { --page: #1b1d21; --card: #44474f; --ink: #fff; --muted: #b3b6bd; --line: #5c6069; --well: #fff; --well-ink: #1f2228; }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { touch-action: manipulation; background: var(--bg); }
+  html { touch-action: manipulation; background: var(--page); }
   body {
-    margin: 0 auto; max-width: 520px; color: var(--fg); background: var(--bg);
-    font: 15px/1.4 system-ui, sans-serif; -webkit-user-select: none; user-select: none;
-    padding: max(16px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 16px; max-width: 420px; min-height: 100dvh; margin: 0 auto; color: var(--ink);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-user-select: none; user-select: none;
+    padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
   }
-  header { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 14px; margin-bottom: 16px; }
-  header::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--live); }
-  body.offline header::before { background: var(--off); }
-  body.offline main { opacity: .4; pointer-events: none; }
-  #art { display: none; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #000; border-radius: 6px; margin-bottom: 16px; }
-  body.art #art { display: block; }
-  h1 { font-size: 20px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #subtitle { margin: 2px 0 0; color: var(--dim); min-height: 1.4em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-  input[type=range] { width: 100%; margin: 0; accent-color: var(--fg); height: 24px; }
-  #position { margin-top: 14px; }
-  .times { display: flex; justify-content: space-between; color: var(--dim); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .card { background: var(--card); border-radius: 18px; padding: 22px; }
+  body.offline .player { opacity: .5; pointer-events: none; }
+  h1 { font-size: 16px; font-weight: 700; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #subtitle { font-size: 12px; color: var(--muted); margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
   button:disabled { opacity: .3; cursor: default; }
-  .icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 8px; }
-  .icon:hover:not(:disabled) { background: var(--soft); }
-  .icon:active:not(:disabled) { background: var(--line); }
-  svg { width: 24px; height: 24px; fill: currentColor; }
-  .stroke { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .transport { display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
-  .transport text { font: 700 7px system-ui, sans-serif; text-anchor: middle; }
-  .transport .skip svg { width: 28px; height: 28px; }
-  #play { width: 64px; height: 64px; border-radius: 50%; background: var(--fg); color: var(--bg); }
-  #play:hover { background: var(--fg); opacity: .85; }
-  #play svg { width: 30px; height: 30px; }
-  .volume { display: flex; align-items: center; gap: 8px; }
-  #volumeValue { min-width: 48px; text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  svg { display: block; width: 22px; height: 22px; fill: currentColor; }
+  .line { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  svg text { font: 700 7px system-ui, sans-serif; text-anchor: middle; dominant-baseline: central; }
+  .tap { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; }
+  .tap:active:not(:disabled) { background: var(--line); }
 
-  nav { display: flex; border-bottom: 1px solid var(--line); margin-top: 20px; }
-  nav button { flex: 1; padding: 12px 0 10px; color: var(--dim); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-  nav button.on { color: var(--fg); border-color: var(--fg); }
-  .panel { padding-top: 14px; }
-  .panel[hidden] { display: none; }
-  h2 { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); margin: 14px 0 8px; }
-  h2:first-child { margin-top: 0; }
+  .stage { display: flex; justify-content: center; align-items: center; gap: 28px; margin: 34px 0 30px; }
+  .stage svg { width: 20px; height: 20px; }
+  #play { width: 96px; height: 96px; border-radius: 50%; background: var(--well); color: var(--well-ink); display: grid; place-items: center; transition: transform .15s; }
+  #play:active { transform: scale(.94); }
+  #play svg { width: 34px; height: 34px; }
+
+  input[type=range] { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 20px; margin: 0; background: none; --p: 0%; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 2px; background: linear-gradient(90deg, var(--ink) var(--p), var(--line) var(--p)); }
+  input[type=range]::-moz-range-track { height: 2px; background: linear-gradient(90deg, var(--ink) var(--p), var(--line) var(--p)); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; margin-top: -4px; border-radius: 50%; background: var(--ink); }
+  input[type=range]::-moz-range-thumb { width: 10px; height: 10px; border: 0; border-radius: 50%; background: var(--ink); }
+  .times { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .tools { display: flex; justify-content: space-between; align-items: center; margin: 14px -10px -8px; }
+  .tools .tap.on { background: var(--ink); color: var(--card); }
+  #speedButton { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .volume { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--muted); }
+  .volume .tap { width: 32px; height: 32px; margin-left: -6px; }
+  .volume svg { width: 18px; height: 18px; }
+
+  h2 { font-size: 14px; font-weight: 700; margin: 0 0 12px; }
+  h3 { font-size: 12px; font-weight: 400; color: var(--muted); margin: 16px 0 8px; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chips button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; font-variant-numeric: tabular-nums; }
-  .chips button:hover { background: var(--soft); }
-  .chips button.on { background: var(--fg); border-color: var(--fg); color: var(--bg); }
-  .stepper { display: flex; align-items: center; gap: 4px; }
-  .stepper button { border: 1px solid var(--line); border-radius: 8px; min-width: 52px; height: 40px; font-variant-numeric: tabular-nums; }
-  .stepper button:hover { background: var(--soft); }
-  .stepper span { flex: 1; text-align: center; font-variant-numeric: tabular-nums; font-weight: 500; }
-  .list { display: flex; flex-direction: column; }
-  .list button { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 8px; border-radius: 6px; text-align: left; }
-  .list button:hover { background: var(--soft); }
-  .list button.on { font-weight: 600; }
-  .list .lead { width: 22px; color: var(--dim); font-variant-numeric: tabular-nums; font-weight: 400; }
-  .list button.on .lead { color: var(--fg); }
+  .chips button { min-height: 34px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .chips button.on { background: var(--ink); border-color: var(--ink); color: var(--card); font-weight: 600; }
+  .stepper { display: flex; align-items: center; justify-content: space-between; }
+  .stepper button { min-width: 48px; height: 34px; border-radius: 99px; border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .stepper button:active { background: var(--line); }
+  .stepper span { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .list button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 42px; text-align: left; border-top: 1px solid var(--line); }
+  .list button:first-child { border-top: 0; }
+  .list .lead { width: 18px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
   .list .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .list .meta { color: var(--dim); font-variant-numeric: tabular-nums; font-weight: 400; }
-  .list progress { width: 56px; height: 4px; accent-color: var(--fg); }
-  .empty { color: var(--dim); }
+  .list .meta { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .list button.on { font-weight: 700; }
+  .list button.on .lead { color: var(--ink); }
+  .list progress { width: 48px; height: 3px; accent-color: var(--ink); }
+  .empty { color: var(--muted); margin: 0; }
   [hidden] { display: none !important; }
 </style>
 </head>
 <body class="offline">
-<header id="mac">Connecting…</header>
-<main>
-  <img id="art" alt="">
-  <h1 id="title">Nothing playing</h1>
+<section class="card player">
+  <h1 id="title">Connecting…</h1>
   <p id="subtitle"></p>
   <div id="controls">
+    <div class="stage">
+      <button class="tap track" data-cmd="playlist-prev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9.5 12 18 18V6z"/></svg></button>
+      <button id="play" aria-label="Play or pause"><svg viewBox="0 0 24 24"><path id="playIcon" d="M8 5v14l11-7z"/></svg></button>
+      <button class="tap track" data-cmd="playlist-next" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg></button>
+    </div>
     <input id="position" type="range" min="0" max="1" step="1" value="0" aria-label="Position">
     <div class="times"><span id="elapsed">0:00</span><span id="remaining">-0:00</span></div>
-    <div class="transport">
-      <button class="icon track" data-cmd="playlist-prev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M5 5h2.5v14H5zM20 5v14L9 12z"/></svg></button>
-      <button class="icon skip" data-seek="-10" aria-label="Back 10 seconds"><svg viewBox="0 0 24 24"><path class="stroke" d="M12 4a8 8 0 1 1-8 8"/><path d="M8.5 4l4-2.6v5.2z"/><text x="12" y="15">10</text></svg></button>
-      <button id="play" aria-label="Play or pause"><svg viewBox="0 0 24 24"><path id="playIcon" d="M7 4.5l13 7.5-13 7.5z"/></svg></button>
-      <button class="icon skip" data-seek="30" aria-label="Forward 30 seconds"><svg viewBox="0 0 24 24"><path class="stroke" d="M12 4a8 8 0 1 0 8 8"/><path d="M15.5 4l-4-2.6v5.2z"/><text x="12" y="15">30</text></svg></button>
-      <button class="icon track" data-cmd="playlist-next" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M16.5 5H19v14h-2.5zM4 5v14l11-7z"/></svg></button>
-    </div>
     <div class="volume">
-      <button class="icon" id="mute" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9z"/><path id="waves" class="stroke" d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path id="slash" class="stroke" d="M15 9l6 6M21 9l-6 6"/></svg></button>
+      <button class="tap" id="mute" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9z"/><path id="waves" class="line" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path id="slash" class="line" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
       <input id="volume" type="range" min="0" max="100" step="1" aria-label="Volume">
-      <span id="volumeValue"></span>
+    </div>
+    <div class="tools">
+      <button class="tap" data-seek="-10" aria-label="Back 10 seconds"><svg viewBox="0 0 24 24"><path class="line" d="M12 4a8 8 0 1 1-8 8"/><path d="M8.5 4l4-2.5v5z"/><text x="12" y="12.5">10</text></svg></button>
+      <button class="tap" data-panel="subtitles" aria-label="Subtitles"><svg viewBox="0 0 24 24"><rect class="line" x="3" y="5" width="18" height="14" rx="3"/><text x="12" y="12" style="font-size: 7.5px">CC</text></svg></button>
+      <button class="tap" data-panel="audio" aria-label="Audio"><svg viewBox="0 0 24 24"><path class="line" d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg></button>
+      <button class="tap" data-panel="speed" id="speedButton" aria-label="Speed">1×</button>
+      <button class="tap" data-panel="library" aria-label="Up next"><svg viewBox="0 0 24 24"><path class="line" d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.5"/><circle cx="4.5" cy="12" r="1.5"/><circle cx="4.5" cy="18" r="1.5"/></svg></button>
+      <button class="tap" data-seek="30" aria-label="Forward 30 seconds"><svg viewBox="0 0 24 24"><path class="line" d="M12 4a8 8 0 1 0 8 8"/><path d="M15.5 4l-4-2.5v5z"/><text x="12" y="12.5">30</text></svg></button>
     </div>
   </div>
+</section>
 
-  <nav>
-    <button data-tab="subtitles">Subtitles</button>
-    <button data-tab="audio">Audio</button>
-    <button data-tab="speed">Speed</button>
-    <button data-tab="library">Up Next</button>
-  </nav>
-  <section class="panel" id="subtitles">
-    <h2>Track</h2><div class="chips" id="sid"></div>
-    <h2>Delay</h2><div class="stepper" data-prop="sub-delay" data-key="subDelay"></div>
-  </section>
-  <section class="panel" id="audio">
-    <h2>Track</h2><div class="chips" id="aid"></div>
-    <h2>Delay</h2><div class="stepper" data-prop="audio-delay" data-key="audioDelay"></div>
-  </section>
-  <section class="panel" id="speed"><div class="chips" id="speeds"></div></section>
-  <section class="panel" id="library">
-    <div id="playlistGroup"><h2>Playlist</h2><div class="list" id="playlist"></div></div>
-    <div id="chaptersGroup"><h2>Chapters</h2><div class="list" id="chapters"></div></div>
-    <div id="recentGroup"><h2>Recent</h2><div class="list" id="recent"></div></div>
-    <p class="empty" id="nothing">Nothing up next.</p>
-  </section>
-</main>
+<section class="card panel" id="subtitles" hidden>
+  <h2>Subtitles</h2>
+  <div class="chips" id="sid"></div>
+  <h3>Delay</h3><div class="stepper" data-prop="sub-delay" data-key="subDelay"></div>
+</section>
+<section class="card panel" id="audio" hidden>
+  <h2>Audio</h2>
+  <div class="chips" id="aid"></div>
+  <h3>Delay</h3><div class="stepper" data-prop="audio-delay" data-key="audioDelay"></div>
+</section>
+<section class="card panel" id="speed" hidden>
+  <h2>Speed</h2>
+  <div class="chips" id="speeds"></div>
+</section>
+<section class="card panel" id="library" hidden>
+  <div id="playlistGroup"><h2>Playlist</h2><div class="list" id="playlist"></div></div>
+  <div id="chaptersGroup"><h3>Chapters</h3><div class="list" id="chapters"></div></div>
+  <div id="recentGroup"><h3>Recently played</h3><div class="list" id="recent"></div></div>
+  <p class="empty" id="nothing">No playlist, chapters or recent files yet.</p>
+</section>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -130,7 +130,7 @@ const wsPort = location.hash.slice(1) || 8766;
 const url = `ws://${location.hostname}:${wsPort}`;
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const STEPS = [-1, -0.1, null, 0.1, 1];
-let socket, s = null, lib = null, dragging = null, frame = 0;
+let socket, s = null, lib = null, dragging = null;
 
 function connect() {
   socket = new WebSocket(url);
@@ -143,7 +143,8 @@ function connect() {
   };
   socket.onclose = () => {
     document.body.classList.add("offline");
-    $("mac").textContent = "Can’t reach IINA. Reconnecting…";
+    $("title").textContent = "Can’t reach IINA";
+    $("subtitle").textContent = "Reconnecting…";
     setTimeout(connect, 1500);
   };
 }
@@ -155,6 +156,11 @@ function clock(t) {
   t = Math.max(0, Math.floor(t || 0));
   const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = String(t % 60).padStart(2, "0");
   return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+}
+
+function fill(range, value) {
+  range.value = value;
+  range.style.setProperty("--p", `${(100 * (range.value - range.min)) / (range.max - range.min || 1)}%`);
 }
 
 // Buttons are rebuilt only when their content changes, so taps aren't lost mid-render.
@@ -200,48 +206,32 @@ function renderLibrary(library) {
 
 function renderSubtitle() {
   const chapter = lib && lib.chapters[s.chapter];
-  const position = lib && lib.playlist.length > 1 && s.playlistPos >= 0 ? `${s.playlistPos + 1} of ${lib.playlist.length}` : "";
-  $("subtitle").textContent = chapter ? chapter.title || `Chapter ${s.chapter + 1}` : position;
-}
-
-function loadFrame() {
-  if (!s.frame) return document.body.classList.remove("art");
-  if (s.frame === frame) return;
-  frame = s.frame;
-  const image = new Image();
-  image.onload = () => {
-    if (frame !== s.frame) return;
-    $("art").src = image.src;
-    document.body.classList.add("art");
-  };
-  image.src = `/frame/${wsPort}.jpg?${frame}`;
+  $("subtitle").textContent = chapter ? `${s.host} – ${chapter.title || `Chapter ${s.chapter + 1}`}` : s.host || location.hostname;
 }
 
 const tracks = (type, current, off) => (off ? [{ id: "no", name: "Off", on: current === "no" }] : []).concat(
   s.tracks.filter((t) => t.type === type).map((t) => ({
-    id: String(t.id), name: [t.title, t.lang.toUpperCase()].filter(Boolean).join(" · ") || `Track ${t.id}`, on: String(t.id) === current,
+    id: String(t.id), name: [t.title, t.lang.toUpperCase()].filter(Boolean).join(", ") || `Track ${t.id}`, on: String(t.id) === current,
   })));
 
 function render(next) {
   const chapterChanged = !s || s.chapter !== next.chapter;
   s = next;
-  $("mac").textContent = s.host || location.hostname;
   $("title").textContent = s.title || "Nothing playing";
   $("controls").hidden = !s.title;
   renderSubtitle();
-  loadFrame();
-  $("playIcon").setAttribute("d", s.pause ? "M7 4.5l13 7.5-13 7.5z" : "M6 4h4v16H6zM14 4h4v16h-4z");
+  $("playIcon").setAttribute("d", s.pause ? "M8 5v14l11-7z" : "M6 5h4v14H6zM14 5h4v14h-4z");
   const position = $("position");
   position.max = Math.max(1, Math.floor(s.duration));
-  if (dragging !== position) position.value = s.time;
+  if (dragging !== position) fill(position, s.time);
   $("elapsed").textContent = clock(+position.value);
   $("remaining").textContent = "-" + clock(s.duration - position.value);
   const volume = $("volume");
   volume.max = s.volumeMax;
-  if (dragging !== volume) volume.value = s.volume;
-  $("volumeValue").textContent = s.mute ? "Muted" : `${Math.round(volume.value)}%`;
+  if (dragging !== volume) fill(volume, s.volume);
   $("waves").style.display = s.mute ? "none" : "";
   $("slash").style.display = s.mute ? "" : "none";
+  $("speedButton").textContent = `${s.speed}×`;
   buttons($("aid"), tracks("audio", s.aid), chip, (item) => set("aid", item.id));
   buttons($("sid"), tracks("sub", s.subVisible ? s.sid : "no", true), chip, (item) => {
     if (item.id !== "no") set("sid", item.id);
@@ -260,21 +250,18 @@ for (const stepper of document.querySelectorAll(".stepper")) {
     if (step === null) { stepper.append(document.createElement("span")); continue; }
     const b = document.createElement("button");
     b.textContent = `${step > 0 ? "+" : "−"}${Math.abs(step)}`;
-    b.setAttribute("aria-label", `${step > 0 ? "+" : "-"}${Math.abs(step)} seconds`);
+    b.setAttribute("aria-label", `${step > 0 ? "Later" : "Earlier"} by ${Math.abs(step)} seconds`);
     b.onclick = () => set(stepper.dataset.prop, Math.round(((s[stepper.dataset.key] || 0) + step) * 10) / 10);
     stepper.append(b);
   }
 }
 
-function showTab(name) {
-  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
+// The tool buttons open one panel at a time under the player; tapping the open one closes it.
+function showPanel(name) {
+  document.querySelectorAll("[data-panel]").forEach((b) => b.classList.toggle("on", b.dataset.panel === name));
   document.querySelectorAll(".panel").forEach((p) => (p.hidden = p.id !== name));
-  try { localStorage.setItem("tab", name); } catch {}
 }
-document.querySelectorAll("nav button").forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
-let saved = null;
-try { saved = localStorage.getItem("tab"); } catch {}
-showTab($(saved) ? saved : "subtitles");
+document.querySelectorAll("[data-panel]").forEach((b) => (b.onclick = () => showPanel(b.classList.contains("on") ? null : b.dataset.panel)));
 
 $("play").onclick = () => set("pause", !s.pause);
 $("mute").onclick = () => set("mute", !s.mute);
@@ -283,9 +270,9 @@ document.querySelectorAll("[data-seek]").forEach((b) => (b.onclick = () => seekB
 
 for (const [range, onInput, onCommit] of [
   [$("position"), (el) => ($("elapsed").textContent = clock(+el.value)), (el) => send({ cmd: "seek", args: [+el.value, "absolute"] })],
-  [$("volume"), (el) => { $("volumeValue").textContent = `${el.value}%`; set("volume", +el.value); }, () => {}],
+  [$("volume"), (el) => set("volume", +el.value), () => {}],
 ]) {
-  range.oninput = () => { dragging = range; onInput(range); };
+  range.oninput = () => { dragging = range; fill(range, range.value); onInput(range); };
   range.onchange = () => { onCommit(range); dragging = null; };
 }
 

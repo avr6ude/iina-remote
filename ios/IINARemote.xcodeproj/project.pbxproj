@@ -55,8 +55,8 @@
 
 /* Begin PBXFileReference section */
 		A10000000000000000000001 /* IINA Remote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "IINA Remote.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A10000000000000000000060 /* Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Watch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000050 /* Widgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Widgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000060 /* Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Watch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -77,6 +77,7 @@
 		A10000000000000000000062 /* Exceptions for "Shared" folder in "Watch" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Artwork.swift,
 				ControlIntents.swift,
 				Discovery.swift,
 				NowPlaying.swift,

@@ -31,6 +31,8 @@ struct PlayerState: Codable, Equatable {
     let audioDelay: Double
     let chapter: Int?
     let playlistPos: Int?
+    /// When the plugin grabbed the current video frame; 0 when there's no picture.
+    let frame: Int?
     let tracks: [Track]
 }
 

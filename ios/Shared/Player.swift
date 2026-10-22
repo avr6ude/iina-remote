@@ -8,10 +8,12 @@ final class Player: Identifiable {
     private(set) var state: PlayerState?
     private(set) var library: Library?
     private(set) var revision = 0
+    private(set) var artwork: Artwork?
 
     private let endpoint: NWEndpoint
     private var connection: NWConnection?
     private var isCancelled = false
+    private var artworkFrame: Int?
 
     nonisolated var id: String { name }
 
@@ -66,6 +68,7 @@ final class Player: Identifiable {
                     case .state(let state):
                         self.state = state
                         self.revision += 1
+                        self.loadArtwork(state.frame ?? 0)
                     case .library(let library):
                         self.library = library
                     }
@@ -75,6 +78,32 @@ final class Player: Identifiable {
                 self.receive(on: connection)
             }
         }
+    }
+
+    private func loadArtwork(_ frame: Int) {
+        guard frame != artworkFrame else { return }
+        guard frame > 0 else {
+            artworkFrame = frame
+            return artwork = nil
+        }
+        guard let url = connection?.currentPath?.remoteEndpoint.flatMap(Self.frameURL) else { return }
+        artworkFrame = frame
+        Task {
+            guard let artwork = await Artwork.load(from: url), frame == artworkFrame else { return }
+            self.artwork = artwork
+        }
+    }
+
+    /// The plugin's web server shares the host with the WebSocket and serves each window's frame by its port.
+    private static func frameURL(_ endpoint: NWEndpoint) -> URL? {
+        guard case let .hostPort(host, port) = endpoint else { return nil }
+        let address = switch host {
+        case .ipv4(let address): String("\(address)".prefix { $0 != "%" })
+        case .ipv6(let address): "[\("\(address)".replacingOccurrences(of: "%", with: "%25"))]"
+        case .name(let name, _): name
+        @unknown default: ""
+        }
+        return URL(string: "http://\(address):8765/frame/\(port.rawValue).jpg")
     }
 
     private func retry(after error: NWError) {

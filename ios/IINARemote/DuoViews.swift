@@ -85,50 +85,65 @@ private struct Tabletop: View {
     }
 }
 
-/// Everything the player's bottom bar opens as sheets, always on screen next to it.
+/// What the player's bottom bar opens as sheets, kept on screen next to it as one list.
 private struct SidePanel: View {
-    enum Tab: String {
-        case playlist = "Playlist"
-        case chapters = "Chapters"
-        case subtitles = "Subtitles"
-        case audio = "Audio"
-        case recent = "Recent"
-    }
-
     let player: Player
     let state: PlayerState
 
-    @State private var tab: Tab?
-
-    private var tabs: [Tab] {
-        let library = player.library
-        return [
-            (library?.playlist.count ?? 0) > 1 ? .playlist : nil,
-            library?.chapters.isEmpty == false ? .chapters : nil,
-            .subtitles,
-            .audio,
-            library?.recent.isEmpty == false ? .recent : nil,
-        ].compactMap(\.self)
-    }
+    @State private var tab: LibraryList.Tab?
 
     var body: some View {
-        let tab = tab.flatMap { tabs.contains($0) ? $0 : nil } ?? tabs[0]
-        Group {
-            switch tab {
-            case .playlist: LibraryList(state: state, library: player.library, send: player.send, inline: true, only: .playlist)
-            case .chapters: LibraryList(state: state, library: player.library, send: player.send, inline: true, only: .chapters)
-            case .recent: LibraryList(state: state, library: player.library, send: player.send, inline: true, only: .recent)
-            case .subtitles: TracksForm(kind: .sub, state: state, send: player.send, inline: true)
-            case .audio: TracksForm(kind: .audio, state: state, send: player.send, inline: true)
+        let tabs = LibraryList.Tab.available(in: player.library)
+        let tab = tab.flatMap { tabs.contains($0) ? $0 : nil } ?? tabs.first
+        List {
+            Section("Subtitles") {
+                Picker("Track", selection: Binding(get: { state.subVisible ? state.sid : "no" }, set: selectSubtitles)) {
+                    Text("Off").tag("no")
+                    ForEach(state.tracks.filter { $0.type == .sub }) { Text($0.label).tag(String($0.id)) }
+                }
+                DelayRow(value: state.subDelay, property: .subDelay, send: player.send)
+            }
+            .panelRows()
+            Section("Audio") {
+                Picker("Track", selection: Binding(get: { state.aid }, set: { player.send(.set(.aid, $0)) })) {
+                    ForEach(state.tracks.filter { $0.type == .audio }) { Text($0.label).tag(String($0.id)) }
+                }
+                DelayRow(value: state.audioDelay, property: .audioDelay, send: player.send)
+                Picker("Speed", selection: Binding(get: { state.speed }, set: { player.send(.set(.speed, $0)) })) {
+                    ForEach(PanelBar.speeds, id: \.self) { Text("\($0.formatted())×").tag($0) }
+                }
+            }
+            .panelRows()
+            if !tabs.isEmpty {
+                Section {
+                    LibraryRows(tab: tab, state: state, library: player.library, send: player.send)
+                } header: {
+                    if tabs.count > 1 {
+                        Picker("Up Next", selection: Binding(get: { tab ?? tabs[0] }, set: { self.tab = $0 })) {
+                            ForEach(tabs, id: \.self) { Text($0.rawValue) }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.bottom, 6)
+                    } else {
+                        Text(tab?.rawValue ?? "Up Next")
+                    }
+                }
+                .panelRows()
             }
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            Picker("Show", selection: Binding(get: { tab }, set: { self.tab = $0 })) {
-                ForEach(tabs, id: \.self) { Text($0.rawValue) }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
-        }
+        .pickerStyle(.menu)
+        .scrollContentBackground(.hidden)
+    }
+
+    private func selectSubtitles(_ id: String) {
+        if id != "no" { player.send(.set(.sid, id)) }
+        player.send(.set(.subVisibility, id != "no"))
+    }
+}
+
+private extension View {
+    /// See-through rows over the artwork backdrop; it only reaches rows, so it goes on each section.
+    func panelRows() -> some View {
+        listRowBackground(Color.white.opacity(0.1))
     }
 }

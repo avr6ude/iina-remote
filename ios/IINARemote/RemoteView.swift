@@ -328,17 +328,12 @@ struct TracksForm: View {
     let kind: PlayerState.Track.Kind
     let state: PlayerState
     let send: (Command) -> Void
-    /// Shown in a pane over the artwork backdrop: see-through rows, and speed under audio.
-    var inline = false
 
     var body: some View {
         let tracks = state.tracks.filter { $0.type == kind }
         Form {
             if kind == .sub {
-                Section {
-                    Toggle("Show Subtitles", isOn: Binding(get: { state.subVisible }, set: { send(.set(.subVisibility, $0)) }))
-                }
-                .panelRows(inline)
+                Toggle("Show Subtitles", isOn: Binding(get: { state.subVisible }, set: { send(.set(.subVisibility, $0)) }))
             }
             Section("Track") {
                 if kind == .audio, tracks.isEmpty {
@@ -353,29 +348,16 @@ struct TracksForm: View {
                     .labelsHidden()
                 }
             }
-            .panelRows(inline)
             Section("Delay") {
                 DelayRow(value: kind == .sub ? state.subDelay : state.audioDelay, property: kind == .sub ? .subDelay : .audioDelay, send: send)
-            }
-            .panelRows(inline)
-            if inline, kind == .audio {
-                Section("Speed") {
-                    Picker("Speed", selection: Binding(get: { state.speed }, set: { send(.set(.speed, $0)) })) {
-                        ForEach(PanelBar.speeds, id: \.self) { Text("\($0.formatted())×").tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                }
-                .panelRows(inline)
             }
         }
         .navigationTitle(kind == .sub ? "Subtitles" : "Audio")
         .navigationBarTitleDisplayMode(.inline)
-        .panelStyle(inline)
     }
 }
 
-private struct DelayRow: View {
+struct DelayRow: View {
     let value: Double
     let property: Command.Property
     let send: (Command) -> Void
@@ -410,75 +392,76 @@ struct LibraryList: View {
         case playlist = "Playlist"
         case chapters = "Chapters"
         case recent = "Recent"
+
+        static func available(in library: Library?) -> [Tab] {
+            guard let library else { return [] }
+            return [library.playlist.count > 1 ? .playlist : nil, library.chapters.isEmpty ? nil : .chapters, library.recent.isEmpty ? nil : .recent]
+                .compactMap(\.self)
+        }
     }
 
     let state: PlayerState
     let library: Library?
     let send: (Command) -> Void
-    /// Shown in a pane next to the player instead of a sheet: no navigation bar, see-through rows.
-    var inline = false
-    /// Shows just this list, for a container that offers its own tabs.
-    var only: Tab?
 
     @State private var tab: Tab?
     @Environment(\.dismiss) private var dismiss
 
-    private var tabs: [Tab] {
-        guard let library else { return [] }
-        return [library.playlist.count > 1 ? .playlist : nil, library.chapters.isEmpty ? nil : .chapters, library.recent.isEmpty ? nil : .recent]
-            .compactMap(\.self)
-    }
-
     var body: some View {
-        if inline {
-            list.panelStyle(true)
-        } else {
-            list
-                .navigationTitle((tab ?? tabs.first)?.rawValue ?? "Up Next")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    if tabs.count > 1 { ToolbarItem(placement: .principal) { picker.fixedSize() } }
-                }
+        let tabs = Tab.available(in: library)
+        let tab = tab ?? tabs.first
+        List {
+            LibraryRows(tab: tab, state: state, library: library, send: send) { dismiss() }
         }
-    }
-
-    private var picker: some View {
-        Picker("Show", selection: Binding(get: { tab ?? tabs.first ?? .recent }, set: { tab = $0 })) {
-            ForEach(tabs, id: \.self) { Text($0.rawValue) }
-        }
-        .pickerStyle(.segmented)
-    }
-
-    private var list: some View {
-        let tab = only ?? tab ?? tabs.first
-        return List {
-            Section {
-                if let library {
-                    switch tab {
-                    case .playlist:
-                        ForEach(Array(library.playlist.enumerated()), id: \.offset) { index, item in
-                            row(item.title, number: index + 1, isCurrent: item.current) { send(.playItem(index)) }
-                        }
-                    case .chapters:
-                        ForEach(Array(library.chapters.enumerated()), id: \.offset) { index, chapter in
-                            row(chapter.title.isEmpty ? "Chapter \(index + 1)" : chapter.title, number: index + 1,
-                                time: clock(chapter.start, of: state.duration), isCurrent: state.chapter == index) {
-                                send(.playChapter(index))
-                            }
-                        }
-                    case .recent:
-                        ForEach(library.recent) { recent in
-                            RecentRow(recent: recent) {
-                                send(.openRecent(recent.url))
-                                dismiss()
-                            }
-                        }
-                    case nil:
-                        Text("Nothing up next").foregroundStyle(.secondary)
+        .navigationTitle(tab?.rawValue ?? "Up Next")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if tabs.count > 1 {
+                ToolbarItem(placement: .principal) {
+                    Picker("Show", selection: Binding(get: { tab ?? .recent }, set: { self.tab = $0 })) {
+                        ForEach(tabs, id: \.self) { Text($0.rawValue) }
                     }
+                    .pickerStyle(.segmented)
+                    .fixedSize()
                 }
             }
-            .panelRows(inline)
+        }
+    }
+}
+
+/// The rows of one Up Next list, for whichever list shows them.
+struct LibraryRows: View {
+    let tab: LibraryList.Tab?
+    let state: PlayerState
+    let library: Library?
+    let send: (Command) -> Void
+    /// Called after opening a recent file, e.g. to close the sheet.
+    var onOpen: () -> Void = {}
+
+    var body: some View {
+        if let library {
+            switch tab {
+            case .playlist:
+                ForEach(Array(library.playlist.enumerated()), id: \.offset) { index, item in
+                    row(item.title, number: index + 1, isCurrent: item.current) { send(.playItem(index)) }
+                }
+            case .chapters:
+                ForEach(Array(library.chapters.enumerated()), id: \.offset) { index, chapter in
+                    row(chapter.title.isEmpty ? "Chapter \(index + 1)" : chapter.title, number: index + 1,
+                        time: clock(chapter.start, of: state.duration), isCurrent: state.chapter == index) {
+                        send(.playChapter(index))
+                    }
+                }
+            case .recent:
+                ForEach(library.recent) { recent in
+                    RecentRow(recent: recent) {
+                        send(.openRecent(recent.url))
+                        onOpen()
+                    }
+                }
+            case nil:
+                Text("Nothing up next").foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -540,20 +523,4 @@ private struct Idle: View {
 
 func clock(_ seconds: Double, of duration: Double) -> String {
     Duration.seconds(max(0, seconds).rounded(.down)).formatted(.time(pattern: duration >= 3600 ? .hourMinuteSecond : .minuteSecond))
-}
-
-extension View {
-    /// See-through rows over the artwork backdrop; it only reaches rows, so apply it to each section.
-    func panelRows(_ isOn: Bool) -> some View {
-        listRowBackground(isOn ? Color.white.opacity(0.1) : nil)
-    }
-
-    /// Lets the artwork backdrop show through a list or form.
-    @ViewBuilder func panelStyle(_ isOn: Bool) -> some View {
-        if isOn {
-            scrollContentBackground(.hidden)
-        } else {
-            self
-        }
-    }
 }

@@ -5,7 +5,7 @@ play, pause, seek, volume, speed, subtitle and audio tracks, delays, playlist, c
 
 <p>
   <img src="screenshots/app.png" width="200" alt="Remote">
-  <img src="screenshots/app-dark.png" width="200" alt="Remote in dark mode">
+  <img src="screenshots/widgets.png" width="200" alt="Widgets">
   <img src="screenshots/web.png" width="200" alt="Browser remote">
 </p>
 

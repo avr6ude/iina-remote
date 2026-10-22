@@ -6,9 +6,11 @@ const PROPS = new Set(["pause", "volume", "mute", "sid", "aid", "speed", "sub-de
 const PLAYLIST = new Set(["playlist-next", "playlist-prev"]);
 const SEEK_MODES = new Set(["relative", "absolute"]);
 const RECENT_LIMIT = 15;
+const FRAME_EVERY = 1200;
 
 const base = utils.resolvePath("~/Library/Application Support/com.colliderli.iina/plugins/com.avrdude.iina-remote");
 const dir = [".iinaplugin-dev", ".iinaplugin"].map((ext) => base + ext).find((d) => utils.fileInPath(`${d}/main.js`));
+const frames = utils.resolvePath("@tmp/frames");
 
 const conns = new Set();
 let port = WS_PORTS.first;
@@ -17,12 +19,16 @@ let sentLibrary = "";
 let ticks = 0;
 const inbox = [];
 let host = "";
+let frame = 0;
+let shot = { tick: -Infinity, title: "", pause: false, time: 0 };
+let loaded = { tick: 0, title: "" };
 
 function state() {
+  const title = mpv.getString("media-title") || "";
   return {
     kind: "state",
     host,
-    title: mpv.getString("media-title") || "",
+    title: title === mpv.getString("filename") ? fileTitle(title) : title,
     pause: mpv.getFlag("pause"),
     time: mpv.getNumber("time-pos") || 0,
     duration: mpv.getNumber("duration") || 0,
@@ -37,6 +43,7 @@ function state() {
     audioDelay: mpv.getNumber("audio-delay"),
     chapter: mpv.getNumber("chapter"),
     playlistPos: mpv.getNumber("playlist-pos"),
+    frame,
     tracks: (mpv.getNative("track-list") || [])
       .filter((t) => t.type === "audio" || t.type === "sub")
       .map((t) => ({ id: t.id, type: t.type, title: t.title || "", lang: t.lang || "" })),
@@ -87,13 +94,31 @@ function handle({ set, value, cmd, args = [] }) {
   sent = sentLibrary = "";
 }
 
+// Grabs the current frame for the apps' artwork when the picture has changed: a new file, a pause or a seek,
+// and once a minute otherwise. serve.pl serves it as /frame/<port>.jpg.
+function capture(s) {
+  const vid = mpv.getString("vid");
+  if (!vid || vid === "no") return void (s.frame = frame = 0);
+  if (s.title !== loaded.title) loaded = { tick: ticks, title: s.title };
+  // A file shows black until its first frames decode, which can take a moment after resuming.
+  if (ticks - loaded.tick < 40 || ticks - shot.tick < 20) return;
+  const expected = shot.time + (s.pause ? 0 : (ticks - shot.tick) * 0.05 * s.speed);
+  const changed = s.title !== shot.title || s.pause !== shot.pause || Math.abs(s.time - expected) > 3;
+  if (!changed && ticks - shot.tick < FRAME_EVERY) return;
+  mpv.command("screenshot-to-file", [`${frames}/${port}.jpg`, "video"]);
+  shot = { tick: ticks, title: s.title, pause: s.pause, time: s.time };
+  s.frame = frame = Date.now();
+}
+
 function send(json) {
   for (const conn of conns) ws.sendText(conn, json).catch(() => conns.delete(conn));
 }
 
 function broadcast() {
   if (!conns.size) return;
-  const json = JSON.stringify(state());
+  const s = state();
+  capture(s);
+  const json = JSON.stringify(s);
   if (json === sent) return;
   send((sent = json));
 }
@@ -121,7 +146,7 @@ async function sendQR() {
 }
 
 ws.onStateUpdate((s, err) => {
-  if (s === "ready") return utils.exec("/bin/sh", [`${dir}/helper.sh`, String(port), String(HTTP_PORT), dir]);
+  if (s === "ready") return utils.exec("/bin/sh", [`${dir}/helper.sh`, String(port), String(HTTP_PORT), dir, frames]);
   if (s !== "failed") return;
   if (port < WS_PORTS.last) return listen(port + 1);
   console.log(`iina-remote: no free port: ${err && err.message}`);

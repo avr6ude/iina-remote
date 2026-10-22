@@ -9,8 +9,13 @@ function run([httpPort, wsPort]) {
 
   const filter = $.CIFilter.filterWithName("CIQRCodeGenerator");
   filter.setValueForKey($(url).dataUsingEncoding($.NSUTF8StringEncoding), "inputMessage");
-  const png = $.NSBitmapImageRep.alloc.initWithCIImage(filter.outputImage)
-    .representationUsingTypeProperties($.NSBitmapImageFileTypePNG, $())
-    .base64EncodedStringWithOptions(0).js;
-  return JSON.stringify({ url, png });
+  // One pixel per module; the sidebar draws them as an SVG so they stay square at any size.
+  const bitmap = $.NSBitmapImageRep.alloc.initWithCIImage(filter.outputImage);
+  const modules = [];
+  for (let y = 0; y < bitmap.pixelsHigh; y++) {
+    let row = "";
+    for (let x = 0; x < bitmap.pixelsWide; x++) row += bitmap.colorAtXY(x, y).redComponent < 0.5 ? "1" : "0";
+    modules.push(row);
+  }
+  return JSON.stringify({ url, modules });
 }

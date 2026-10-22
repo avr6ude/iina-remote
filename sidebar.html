@@ -4,19 +4,21 @@
 <meta charset="utf-8">
 <meta name="color-scheme" content="light dark">
 <style>
-  body { margin: 0; padding: 20px 16px; font: 13px -apple-system, system-ui, sans-serif; text-align: center; }
-  img { width: 100%; max-width: 220px; aspect-ratio: 1; image-rendering: pixelated; border: 10px solid #fff; border-radius: 8px; box-sizing: border-box; }
-  p { margin: 12px 0 4px; }
+  body { margin: 0; padding: 20px; font: 13px -apple-system, system-ui, sans-serif; text-align: center; }
+  svg { display: block; width: 100%; aspect-ratio: 1; padding: 12px; box-sizing: border-box; background: #fff; border-radius: 12px; shape-rendering: crispEdges; }
+  p { margin: 14px 0 4px; }
   small { opacity: .6; user-select: text; word-break: break-all; }
 </style>
 </head>
 <body>
-<img id="qr" alt="QR code">
+<svg id="qr" role="img" aria-label="QR code"></svg>
 <p>Scan with your phone's camera to open the remote, or use the IINA Remote app.</p>
 <small id="url"></small>
 <script>
-  iina.onMessage("qr", ({ url, png }) => {
-    document.getElementById("qr").src = `data:image/png;base64,${png}`;
+  iina.onMessage("qr", ({ url, modules }) => {
+    const qr = document.getElementById("qr");
+    qr.setAttribute("viewBox", `0 0 ${modules.length} ${modules.length}`);
+    qr.innerHTML = `<path d="${modules.flatMap((row, y) => [...row].map((m, x) => (m === "1" ? `M${x} ${y}h1v1h-1z` : ""))).join("")}"/>`;
     document.getElementById("url").textContent = url;
   });
   iina.postMessage("ready", {});

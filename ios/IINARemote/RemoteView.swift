@@ -8,7 +8,11 @@ struct RemoteView: View {
     var body: some View {
         Group {
             if let state = player.state, !state.title.isEmpty {
-                NowPlayingScreen(player: player, state: state)
+                if #available(iOS 27.1, *) {
+                    DuoPlayer(player: player, state: state)
+                } else {
+                    NowPlayingScreen(player: player, state: state)
+                }
             } else if player.state != nil {
                 Idle(recent: player.library?.recent ?? [], send: player.send)
             } else {
@@ -27,7 +31,7 @@ struct RemoteView: View {
     }
 }
 
-private enum Panel: String, Identifiable {
+enum Panel: String, Identifiable {
     case subtitles = "Subtitles"
     case audio = "Audio"
     case library = "Up Next"
@@ -35,7 +39,7 @@ private enum Panel: String, Identifiable {
     var id: Self { self }
 }
 
-private struct NowPlayingScreen: View {
+struct NowPlayingScreen: View {
     let player: Player
     let state: PlayerState
 
@@ -150,7 +154,7 @@ private struct NowPlayingScreen: View {
 }
 
 /// The artwork blurred into the background, like Music's player.
-private struct Backdrop: View {
+struct Backdrop: View {
     let artwork: Artwork?
 
     var body: some View {
@@ -173,7 +177,7 @@ private struct Backdrop: View {
     }
 }
 
-private struct PressStyle: ButtonStyle {
+struct PressStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
@@ -224,7 +228,7 @@ private struct Bar: View {
     }
 }
 
-private struct Scrubber: View {
+struct Scrubber: View {
     let state: PlayerState
     let send: (Command) -> Void
 
@@ -255,7 +259,7 @@ private struct Scrubber: View {
     }
 }
 
-private struct Volume: View {
+struct Volume: View {
     let state: PlayerState
     let send: (Command) -> Void
 
@@ -281,7 +285,7 @@ private struct Volume: View {
     }
 }
 
-private struct PanelSheet: View {
+struct PanelSheet: View {
     let panel: Panel
     let player: Player
 
@@ -480,6 +484,6 @@ private struct Idle: View {
     }
 }
 
-private func clock(_ seconds: Double, of duration: Double) -> String {
+func clock(_ seconds: Double, of duration: Double) -> String {
     Duration.seconds(max(0, seconds).rounded(.down)).formatted(.time(pattern: duration >= 3600 ? .hourMinuteSecond : .minuteSecond))
 }

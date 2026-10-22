@@ -1,10 +1,11 @@
 use strict;
 use warnings;
-use IO::Socket::INET;
+use IO::Socket::IP;
 
 my ($port, $dir, $frames) = @ARGV;
 my %routes = ('/' => ["$dir/remote.html", 'text/html; charset=utf-8'], '/icon.png' => ["$dir/icon.png", 'image/png']);
-my $server = IO::Socket::INET->new(LocalPort => $port, Listen => 8, ReuseAddr => 1) or exit 0;
+# Dual-stack: iPhones often reach the Mac over link-local IPv6.
+my $server = IO::Socket::IP->new(LocalHost => '::', LocalPort => $port, V6Only => 0, Listen => 8, ReuseAddr => 1) or exit 0;
 $SIG{CHLD} = 'IGNORE';
 
 while (my $client = $server->accept) {

@@ -10,106 +10,127 @@
 <link rel="icon" href="/icon.png">
 <title>IINA Remote</title>
 <style>
-  :root { --bg: #fff; --fg: #111; --dim: #777; --line: #e6e6e6; --soft: #f3f3f3; --accent: #e5484d; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #111; --fg: #eee; --dim: #8a8a8a; --line: #2a2a2a; --soft: #1d1d1d; } }
+  :root { --bg: #fafafa; --fg: #18181b; --dim: #71717a; --line: #e4e4e7; --soft: #f0f0f2; --live: #16a34a; --off: #dc2626; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #131315; --fg: #f4f4f5; --dim: #a1a1aa; --line: #2e2e33; --soft: #1f1f23; }
+  }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { touch-action: manipulation; }
+  html { touch-action: manipulation; background: var(--bg); }
   body {
-    margin: 0 auto; max-width: 480px; background: var(--bg); color: var(--fg); accent-color: var(--accent);
-    font: 16px/1.4 system-ui, -apple-system, sans-serif; -webkit-user-select: none; user-select: none;
-    padding: max(24px, env(safe-area-inset-top)) 20px max(32px, env(safe-area-inset-bottom));
+    margin: 0 auto; max-width: 520px; color: var(--fg); background: var(--bg);
+    font: 15px/1.4 system-ui, sans-serif; -webkit-user-select: none; user-select: none;
+    padding: max(16px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
   }
-  header { margin-bottom: 20px; }
-  h1 { font-size: 22px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #status { margin: 2px 0 0; color: var(--dim); font-size: 14px; }
-  #status::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: #30a46c; }
-  body.offline #status::before { background: var(--accent); }
-  body.offline main { opacity: .35; pointer-events: none; }
-  section { border-top: 1px solid var(--line); padding: 16px 0 4px; }
-  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--dim); margin: 0 0 4px; }
-  .row { display: flex; align-items: center; gap: 12px; min-height: 52px; }
-  .row > .label { flex: 1; }
-  input[type=range] { flex: 1; width: 100%; margin: 0; }
+  header { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 14px; margin-bottom: 16px; }
+  header::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--live); }
+  body.offline header::before { background: var(--off); }
+  body.offline main { opacity: .4; pointer-events: none; }
+  #art { display: none; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #000; border-radius: 6px; margin-bottom: 16px; }
+  body.art #art { display: block; }
+  h1 { font-size: 20px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #subtitle { margin: 2px 0 0; color: var(--dim); min-height: 1.4em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  input[type=range] { width: 100%; margin: 0; accent-color: var(--fg); height: 24px; }
+  #position { margin-top: 14px; }
   .times { display: flex; justify-content: space-between; color: var(--dim); font-size: 13px; font-variant-numeric: tabular-nums; }
-  button { font: inherit; color: inherit; background: none; border: 0; border-radius: 10px; min-width: 44px; height: 44px; padding: 0; }
-  button:active { background: var(--soft); }
-  .icon { width: 22px; height: 22px; fill: currentColor; vertical-align: middle; }
-  .stroke { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-  .transport { display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px; }
-  .transport button { font-variant-numeric: tabular-nums; font-weight: 600; }
-  #play { width: 72px; height: 72px; border-radius: 50%; background: var(--fg); color: var(--bg); }
-  #play .icon { width: 30px; height: 30px; }
-  .value { min-width: 48px; text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
-  #mute.on { color: var(--accent); }
-  select {
-    font: inherit; color: inherit; border: 1px solid var(--line); border-radius: 10px; height: 44px; width: 60%;
-    appearance: none; -webkit-appearance: none; padding: 0 36px 0 12px;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23888' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center / 12px 8px;
-  }
-  .stepper { display: flex; align-items: center; }
-  .stepper .reset { min-width: 64px; font-variant-numeric: tabular-nums; }
-  .segmented { display: flex; flex: 1; background: var(--soft); border-radius: 10px; padding: 3px; }
-  .segmented button { flex: 1; height: 38px; min-width: 0; border-radius: 8px; font-size: 15px; font-variant-numeric: tabular-nums; }
-  .segmented button.on { background: var(--bg); box-shadow: 0 1px 3px #0002; font-weight: 600; }
-  .list { list-style: none; margin: 0; padding: 0; }
-  .list button { display: flex; align-items: center; gap: 12px; width: 100%; height: auto; min-height: 48px; padding: 8px 0; text-align: left; border-radius: 0; }
+
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  button:disabled { opacity: .3; cursor: default; }
+  .icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 8px; }
+  .icon:hover:not(:disabled) { background: var(--soft); }
+  .icon:active:not(:disabled) { background: var(--line); }
+  svg { width: 24px; height: 24px; fill: currentColor; }
+  .stroke { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .transport { display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
+  .transport text { font: 700 7px system-ui, sans-serif; text-anchor: middle; }
+  .transport .skip svg { width: 28px; height: 28px; }
+  #play { width: 64px; height: 64px; border-radius: 50%; background: var(--fg); color: var(--bg); }
+  #play:hover { background: var(--fg); opacity: .85; }
+  #play svg { width: 30px; height: 30px; }
+  .volume { display: flex; align-items: center; gap: 8px; }
+  #volumeValue { min-width: 48px; text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+  nav { display: flex; border-bottom: 1px solid var(--line); margin-top: 20px; }
+  nav button { flex: 1; padding: 12px 0 10px; color: var(--dim); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  nav button.on { color: var(--fg); border-color: var(--fg); }
+  .panel { padding-top: 14px; }
+  .panel[hidden] { display: none; }
+  h2 { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); margin: 14px 0 8px; }
+  h2:first-child { margin-top: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .chips button:hover { background: var(--soft); }
+  .chips button.on { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+  .stepper { display: flex; align-items: center; gap: 4px; }
+  .stepper button { border: 1px solid var(--line); border-radius: 8px; min-width: 52px; height: 40px; font-variant-numeric: tabular-nums; }
+  .stepper button:hover { background: var(--soft); }
+  .stepper span { flex: 1; text-align: center; font-variant-numeric: tabular-nums; font-weight: 500; }
+  .list { display: flex; flex-direction: column; }
+  .list button { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 8px; border-radius: 6px; text-align: left; }
+  .list button:hover { background: var(--soft); }
+  .list button.on { font-weight: 600; }
+  .list .lead { width: 22px; color: var(--dim); font-variant-numeric: tabular-nums; font-weight: 400; }
+  .list button.on .lead { color: var(--fg); }
   .list .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .list .meta { color: var(--dim); font-size: 14px; font-variant-numeric: tabular-nums; }
-  .list button.on .name { color: var(--accent); font-weight: 600; }
-  .list progress { width: 56px; height: 4px; accent-color: var(--accent); }
-  section[hidden] { display: none; }
+  .list .meta { color: var(--dim); font-variant-numeric: tabular-nums; font-weight: 400; }
+  .list progress { width: 56px; height: 4px; accent-color: var(--fg); }
+  .empty { color: var(--dim); }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body class="offline">
-<header>
-  <h1 id="title">IINA Remote</h1>
-  <p id="status">Connecting…</p>
-</header>
+<header id="mac">Connecting…</header>
 <main>
-  <section>
-    <input id="seek" type="range" min="0" max="1" step="1" value="0" aria-label="Position">
+  <img id="art" alt="">
+  <h1 id="title">Nothing playing</h1>
+  <p id="subtitle"></p>
+  <div id="controls">
+    <input id="position" type="range" min="0" max="1" step="1" value="0" aria-label="Position">
     <div class="times"><span id="elapsed">0:00</span><span id="remaining">-0:00</span></div>
     <div class="transport">
-      <button data-cmd="playlist-prev" aria-label="Previous"><svg class="icon" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM19 5v14l-10-7z"/></svg></button>
-      <button data-seek="-10" aria-label="Back 10 seconds">−10</button>
-      <button id="play" aria-label="Play or pause"><svg class="icon" viewBox="0 0 24 24"><path id="playIcon" d="M8 5l11 7-11 7z"/></svg></button>
-      <button data-seek="30" aria-label="Forward 30 seconds">+30</button>
-      <button data-cmd="playlist-next" aria-label="Next"><svg class="icon" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM5 5v14l10-7z"/></svg></button>
+      <button class="icon track" data-cmd="playlist-prev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M5 5h2.5v14H5zM20 5v14L9 12z"/></svg></button>
+      <button class="icon skip" data-seek="-10" aria-label="Back 10 seconds"><svg viewBox="0 0 24 24"><path class="stroke" d="M12 4a8 8 0 1 1-8 8"/><path d="M8.5 4l4-2.6v5.2z"/><text x="12" y="15">10</text></svg></button>
+      <button id="play" aria-label="Play or pause"><svg viewBox="0 0 24 24"><path id="playIcon" d="M7 4.5l13 7.5-13 7.5z"/></svg></button>
+      <button class="icon skip" data-seek="30" aria-label="Forward 30 seconds"><svg viewBox="0 0 24 24"><path class="stroke" d="M12 4a8 8 0 1 0 8 8"/><path d="M15.5 4l-4-2.6v5.2z"/><text x="12" y="15">30</text></svg></button>
+      <button class="icon track" data-cmd="playlist-next" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M16.5 5H19v14h-2.5zM4 5v14l11-7z"/></svg></button>
     </div>
-  </section>
-
-  <section>
-    <h2>Sound</h2>
-    <div class="row">
-      <button id="mute" aria-label="Mute"><svg class="icon" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="muteWaves" class="stroke" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+    <div class="volume">
+      <button class="icon" id="mute" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9z"/><path id="waves" class="stroke" d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path id="slash" class="stroke" d="M15 9l6 6M21 9l-6 6"/></svg></button>
       <input id="volume" type="range" min="0" max="100" step="1" aria-label="Volume">
-      <span class="value" id="volumeValue"></span>
+      <span id="volumeValue"></span>
     </div>
-    <div class="row"><span class="label">Track</span><select id="aid" aria-label="Audio track"></select></div>
-    <div class="row" data-prop="audio-delay" data-key="audioDelay"><span class="label">Delay</span></div>
-  </section>
+  </div>
 
-  <section>
-    <h2>Subtitles</h2>
-    <div class="row"><span class="label">Track</span><select id="sid" aria-label="Subtitle track"></select></div>
-    <div class="row" data-prop="sub-delay" data-key="subDelay"><span class="label">Delay</span></div>
+  <nav>
+    <button data-tab="subtitles">Subtitles</button>
+    <button data-tab="audio">Audio</button>
+    <button data-tab="speed">Speed</button>
+    <button data-tab="library">Up Next</button>
+  </nav>
+  <section class="panel" id="subtitles">
+    <h2>Track</h2><div class="chips" id="sid"></div>
+    <h2>Delay</h2><div class="stepper" data-prop="sub-delay" data-key="subDelay"></div>
   </section>
-
-  <section>
-    <h2>Speed</h2>
-    <div class="row"><div class="segmented" id="speeds"></div></div>
+  <section class="panel" id="audio">
+    <h2>Track</h2><div class="chips" id="aid"></div>
+    <h2>Delay</h2><div class="stepper" data-prop="audio-delay" data-key="audioDelay"></div>
   </section>
-  <section id="playlistSection" hidden><h2>Playlist</h2><ul class="list" id="playlist"></ul></section>
-  <section id="chaptersSection" hidden><h2>Chapters</h2><ul class="list" id="chapters"></ul></section>
-  <section id="recentSection" hidden><h2>Recent</h2><ul class="list" id="recent"></ul></section>
+  <section class="panel" id="speed"><div class="chips" id="speeds"></div></section>
+  <section class="panel" id="library">
+    <div id="playlistGroup"><h2>Playlist</h2><div class="list" id="playlist"></div></div>
+    <div id="chaptersGroup"><h2>Chapters</h2><div class="list" id="chapters"></div></div>
+    <div id="recentGroup"><h2>Recent</h2><div class="list" id="recent"></div></div>
+    <p class="empty" id="nothing">Nothing up next.</p>
+  </section>
 </main>
 
 <script>
 const $ = (id) => document.getElementById(id);
-const url = `ws://${location.hostname}:${location.hash.slice(1) || 8766}`;
+const wsPort = location.hash.slice(1) || 8766;
+const url = `ws://${location.hostname}:${wsPort}`;
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
-const CHEVRON = { "-1": "M13 6l-6 6 6 6M19 6l-6 6 6 6", "-0.1": "M15 6l-6 6 6 6", "0.1": "M9 6l6 6-6 6", "1": "M5 6l6 6-6 6M11 6l6 6-6 6" };
-let socket, s = null, lib = null, dragging = null;
+const STEPS = [-1, -0.1, null, 0.1, 1];
+let socket, s = null, lib = null, dragging = null, frame = 0;
 
 function connect() {
   socket = new WebSocket(url);
@@ -122,7 +143,7 @@ function connect() {
   };
   socket.onclose = () => {
     document.body.classList.add("offline");
-    $("status").textContent = "Can’t reach IINA. Reconnecting…";
+    $("mac").textContent = "Can’t reach IINA. Reconnecting…";
     setTimeout(connect, 1500);
   };
 }
@@ -136,117 +157,140 @@ function clock(t) {
   return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 }
 
-function fillTracks(select, tracks, current, offLabel) {
-  const options = (offLabel ? [["no", offLabel]] : []).concat(tracks.map((t) => [
-    String(t.id), [t.title, t.lang.toUpperCase()].filter(Boolean).join(" · ") || `Track ${t.id}`,
-  ]));
-  const key = JSON.stringify(options);
-  if (select.dataset.key !== key) {
-    select.replaceChildren(...options.map(([value, label]) => new Option(label, value)));
-    select.dataset.key = key;
-  }
-  select.value = current;
-}
-
-function fillList(id, items, onTap) {
-  $(`${id}Section`).hidden = !items.length;
-  $(id).replaceChildren(...items.map((item, index) => {
-    const li = document.createElement("li");
+// Buttons are rebuilt only when their content changes, so taps aren't lost mid-render.
+function buttons(container, items, build, onTap) {
+  const key = JSON.stringify(items);
+  if (container.dataset.key === key) return;
+  container.dataset.key = key;
+  container.replaceChildren(...items.map((item, index) => {
     const b = document.createElement("button");
     b.className = item.on ? "on" : "";
-    b.innerHTML = '<span class="name"></span>';
-    b.firstChild.textContent = item.name;
-    if (item.meta) b.insertAdjacentHTML("beforeend", `<span class="meta">${item.meta}</span>`);
-    if (item.progress) b.insertAdjacentHTML("beforeend", `<progress max="1" value="${item.progress}"></progress>`);
+    build(b, item);
     b.onclick = () => onTap(item, index);
-    li.append(b);
-    return li;
+    return b;
   }));
+}
+const chip = (b, item) => (b.textContent = item.name);
+function row(b, item) {
+  b.innerHTML = '<span class="lead"></span><span class="name"></span>';
+  b.firstChild.textContent = item.lead ?? "";
+  b.lastChild.textContent = item.name;
+  if (item.meta) b.insertAdjacentHTML("beforeend", `<span class="meta">${item.meta}</span>`);
+  if (item.progress) b.insertAdjacentHTML("beforeend", `<progress max="1" value="${item.progress}"></progress>`);
+}
+
+function list(id, items, onTap) {
+  $(`${id}Group`).hidden = !items.length;
+  buttons($(id), items, row, onTap);
 }
 
 function renderLibrary(library) {
   lib = library;
-  fillList("playlist", library.playlist.length > 1 ? library.playlist.map((p) => ({ name: p.title, on: p.current })) : [],
+  const current = s && s.chapter;
+  list("playlist", lib.playlist.length > 1 ? lib.playlist.map((p, i) => ({ lead: i + 1, name: p.title, on: p.current })) : [],
     (_, i) => send({ cmd: "playlist-play-index", args: [i] }));
-  fillList("chapters", library.chapters.map((c, i) => ({ name: c.title || `Chapter ${i + 1}`, meta: clock(c.start), on: s && s.chapter === i })),
+  list("chapters", lib.chapters.map((c, i) => ({ lead: i + 1, name: c.title || `Chapter ${i + 1}`, meta: clock(c.start), on: current === i })),
     (_, i) => send({ cmd: "chapter", args: [i] }));
-  fillList("recent", library.recent.map((r) => ({ name: r.title, url: r.url, progress: r.duration ? Math.min(1, r.progress / r.duration) : 0 })),
+  list("recent", lib.recent.map((r) => ({ name: r.title, url: r.url, progress: r.duration ? Math.min(1, r.progress / r.duration) : 0 })),
     (item) => send({ cmd: "open-recent", args: [item.url] }));
+  $("nothing").hidden = lib.playlist.length > 1 || lib.chapters.length || lib.recent.length;
+  document.querySelectorAll(".track").forEach((b) => (b.disabled = lib.playlist.length < 2));
+  if (s) renderSubtitle();
 }
+
+function renderSubtitle() {
+  const chapter = lib && lib.chapters[s.chapter];
+  const position = lib && lib.playlist.length > 1 && s.playlistPos >= 0 ? `${s.playlistPos + 1} of ${lib.playlist.length}` : "";
+  $("subtitle").textContent = chapter ? chapter.title || `Chapter ${s.chapter + 1}` : position;
+}
+
+function loadFrame() {
+  if (!s.frame) return document.body.classList.remove("art");
+  if (s.frame === frame) return;
+  frame = s.frame;
+  const image = new Image();
+  image.onload = () => {
+    if (frame !== s.frame) return;
+    $("art").src = image.src;
+    document.body.classList.add("art");
+  };
+  image.src = `/frame/${wsPort}.jpg?${frame}`;
+}
+
+const tracks = (type, current, off) => (off ? [{ id: "no", name: "Off", on: current === "no" }] : []).concat(
+  s.tracks.filter((t) => t.type === type).map((t) => ({
+    id: String(t.id), name: [t.title, t.lang.toUpperCase()].filter(Boolean).join(" · ") || `Track ${t.id}`, on: String(t.id) === current,
+  })));
 
 function render(next) {
   const chapterChanged = !s || s.chapter !== next.chapter;
   s = next;
+  $("mac").textContent = s.host || location.hostname;
   $("title").textContent = s.title || "Nothing playing";
-  $("status").textContent = `Connected to ${s.host || location.hostname}`;
-  $("playIcon").setAttribute("d", s.pause ? "M8 5l11 7-11 7z" : "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z");
-  const seek = $("seek");
-  seek.max = Math.max(1, Math.floor(s.duration));
-  if (dragging !== seek) seek.value = s.time;
-  $("elapsed").textContent = clock(+seek.value);
-  $("remaining").textContent = "-" + clock(s.duration - seek.value);
+  $("controls").hidden = !s.title;
+  renderSubtitle();
+  loadFrame();
+  $("playIcon").setAttribute("d", s.pause ? "M7 4.5l13 7.5-13 7.5z" : "M6 4h4v16H6zM14 4h4v16h-4z");
+  const position = $("position");
+  position.max = Math.max(1, Math.floor(s.duration));
+  if (dragging !== position) position.value = s.time;
+  $("elapsed").textContent = clock(+position.value);
+  $("remaining").textContent = "-" + clock(s.duration - position.value);
   const volume = $("volume");
   volume.max = s.volumeMax;
   if (dragging !== volume) volume.value = s.volume;
   $("volumeValue").textContent = s.mute ? "Muted" : `${Math.round(volume.value)}%`;
-  $("mute").classList.toggle("on", s.mute);
-  $("muteWaves").style.visibility = s.mute ? "hidden" : "visible";
-  fillTracks($("aid"), s.tracks.filter((t) => t.type === "audio"), s.aid);
-  fillTracks($("sid"), s.tracks.filter((t) => t.type === "sub"), s.subVisible ? s.sid : "no", "Off");
-  document.querySelectorAll("[data-prop] .reset").forEach((b) => {
-    b.textContent = `${(s[b.parentNode.parentNode.dataset.key] || 0).toFixed(1)} s`;
+  $("waves").style.display = s.mute ? "none" : "";
+  $("slash").style.display = s.mute ? "" : "none";
+  buttons($("aid"), tracks("audio", s.aid), chip, (item) => set("aid", item.id));
+  buttons($("sid"), tracks("sub", s.subVisible ? s.sid : "no", true), chip, (item) => {
+    if (item.id !== "no") set("sid", item.id);
+    set("sub-visibility", item.id !== "no");
   });
-  document.querySelectorAll("#speeds button").forEach((b) => b.classList.toggle("on", Math.abs(+b.dataset.speed - s.speed) < 0.001));
+  buttons($("speeds"), SPEEDS.map((speed) => ({ name: `${speed}×`, speed, on: Math.abs(speed - s.speed) < 0.001 })), chip,
+    (item) => set("speed", item.speed));
+  document.querySelectorAll(".stepper span").forEach((span) => {
+    span.textContent = `${(s[span.parentNode.dataset.key] || 0).toFixed(1)} s`;
+  });
   if (chapterChanged && lib) renderLibrary(lib);
 }
 
-for (const row of document.querySelectorAll("[data-prop]")) {
-  const stepper = document.createElement("div");
-  stepper.className = "stepper";
-  const step = (delta) => () => set(row.dataset.prop, delta ? Math.round(((s[row.dataset.key] || 0) + delta) * 10) / 10 : 0);
-  for (const delta of ["-1", "-0.1", null, "0.1", "1"]) {
+for (const stepper of document.querySelectorAll(".stepper")) {
+  for (const step of STEPS) {
+    if (step === null) { stepper.append(document.createElement("span")); continue; }
     const b = document.createElement("button");
-    if (delta) {
-      b.setAttribute("aria-label", `${delta > 0 ? "+" : ""}${delta} s`);
-      b.innerHTML = `<svg class="icon stroke" viewBox="0 0 24 24"><path d="${CHEVRON[delta]}"/></svg>`;
-    } else {
-      b.className = "reset";
-      b.setAttribute("aria-label", "Reset delay");
-    }
-    b.onclick = step(delta ? +delta : 0);
+    b.textContent = `${step > 0 ? "+" : "−"}${Math.abs(step)}`;
+    b.setAttribute("aria-label", `${step > 0 ? "+" : "-"}${Math.abs(step)} seconds`);
+    b.onclick = () => set(stepper.dataset.prop, Math.round(((s[stepper.dataset.key] || 0) + step) * 10) / 10);
     stepper.append(b);
   }
-  row.append(stepper);
 }
-$("speeds").append(...SPEEDS.map((speed) => {
-  const b = document.createElement("button");
-  b.dataset.speed = speed;
-  b.textContent = `${speed}×`;
-  b.onclick = () => set("speed", speed);
-  return b;
-}));
+
+function showTab(name) {
+  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
+  document.querySelectorAll(".panel").forEach((p) => (p.hidden = p.id !== name));
+  try { localStorage.setItem("tab", name); } catch {}
+}
+document.querySelectorAll("nav button").forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
+let saved = null;
+try { saved = localStorage.getItem("tab"); } catch {}
+showTab($(saved) ? saved : "subtitles");
 
 $("play").onclick = () => set("pause", !s.pause);
 $("mute").onclick = () => set("mute", !s.mute);
-$("aid").onchange = (e) => set("aid", e.target.value);
-$("sid").onchange = (e) => {
-  if (e.target.value !== "no") set("sid", e.target.value);
-  set("sub-visibility", e.target.value !== "no");
-};
 document.querySelectorAll("[data-cmd]").forEach((b) => (b.onclick = () => send({ cmd: b.dataset.cmd })));
 document.querySelectorAll("[data-seek]").forEach((b) => (b.onclick = () => seekBy(+b.dataset.seek)));
 
-for (const [slider, onInput, onCommit] of [
-  [$("seek"), (el) => ($("elapsed").textContent = clock(+el.value)), (el) => send({ cmd: "seek", args: [+el.value, "absolute"] })],
+for (const [range, onInput, onCommit] of [
+  [$("position"), (el) => ($("elapsed").textContent = clock(+el.value)), (el) => send({ cmd: "seek", args: [+el.value, "absolute"] })],
   [$("volume"), (el) => { $("volumeValue").textContent = `${el.value}%`; set("volume", +el.value); }, () => {}],
 ]) {
-  slider.oninput = () => { dragging = slider; onInput(slider); };
-  slider.onchange = () => { onCommit(slider); dragging = null; };
+  range.oninput = () => { dragging = range; onInput(range); };
+  range.onchange = () => { onCommit(range); dragging = null; };
 }
 
 document.onkeydown = (e) => {
-  const tag = e.target.tagName;
-  if (!s || e.metaKey || e.ctrlKey || tag === "SELECT" || tag === "INPUT" || (tag === "BUTTON" && e.key === " ")) return;
+  if (!s || e.metaKey || e.ctrlKey || e.target.tagName === "INPUT" || (e.target.tagName === "BUTTON" && e.key === " ")) return;
   const keys = {
     " ": () => set("pause", !s.pause),
     ArrowLeft: () => seekBy(-10),

@@ -45,6 +45,15 @@ struct SkipBackIntent: LiveActivityIntent {
     }
 }
 
+struct PreviousItemIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Previous Episode"
+    static let description = IntentDescription("Plays the previous item in IINA's playlist.")
+
+    @MainActor func perform() async throws -> some IntentResult {
+        try await control { _ in .previous }
+    }
+}
+
 struct NextItemIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Next Episode"
     static let description = IntentDescription("Plays the next item in IINA's playlist.")

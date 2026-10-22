@@ -3,7 +3,7 @@ import SwiftUI
 struct RemoteView: View {
     let player: Player
 
-    @AppStorage(Remote.liveActivityKey) private var showsLiveActivity = false
+    @AppStorage(Remote.liveActivityKey) private var showsLiveActivity = true
 
     var body: some View {
         Group {
@@ -19,7 +19,9 @@ struct RemoteView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             Menu("More", systemImage: "ellipsis") {
-                Toggle("Live Activity", systemImage: "platter.filled.bottom.iphone", isOn: $showsLiveActivity)
+                Section("Controls on the Lock Screen and in the Dynamic Island while something plays") {
+                    Toggle("Live Activity", systemImage: "platter.filled.bottom.iphone", isOn: $showsLiveActivity)
+                }
             }
         }
     }

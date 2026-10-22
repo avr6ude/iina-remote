@@ -10,7 +10,9 @@ final class Remote {
     let discovery = Discovery()
     @ObservationIgnored var published: NowPlaying?
 
-    private init() {}
+    private init() {
+        UserDefaults.standard.register(defaults: [Self.liveActivityKey: true])
+    }
 
     var selectedName: String {
         get { access(keyPath: \.selectedName); return UserDefaults.standard.string(forKey: Self.selectionKey) ?? "" }

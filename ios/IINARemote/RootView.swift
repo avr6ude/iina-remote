@@ -3,7 +3,7 @@ import SwiftUI
 struct RootView: View {
     private let discovery = Remote.shared.discovery
     @AppStorage(Remote.selectionKey) private var selectedName = ""
-    @AppStorage(Remote.liveActivityKey) private var showsLiveActivity = false
+    @AppStorage(Remote.liveActivityKey) private var showsLiveActivity = true
     @State private var wasInBackground = false
     @Environment(\.scenePhase) private var scenePhase
 

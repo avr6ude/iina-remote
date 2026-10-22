@@ -12,12 +12,15 @@ struct DuoPlayer: View {
             if let fold, fold.frame.width > fold.frame.height {
                 Tabletop(player: player, state: state, fold: fold.frame)
             } else if proxy.size.width > 600 {
-                ArrangementView {
+                // The fold is reported even when the phone lies flat, so each half keeps clear of the hinge.
+                let hinge = proxy.reservedRegions(kind: .division, options: [.includeInactive]).first
+                HStack(spacing: 0) {
                     NowPlayingScreen(player: player, state: state, showsBackdrop: false, showsPanelBar: false)
-                } secondary: {
+                        .frame(width: hinge.map { $0.frame.minX - 12 } ?? proxy.size.width / 2)
+                    Color.clear
+                        .frame(width: hinge.map { $0.frame.width + 24 } ?? 0)
                     SidePanel(player: player, state: state)
                 }
-                .arrangementViewStyle(.split)
                 .background { Backdrop(artwork: player.artwork) }
             } else {
                 NowPlayingScreen(player: player, state: state)
@@ -124,7 +127,7 @@ private struct SidePanel: View {
                 ForEach(tabs, id: \.self) { Text($0.rawValue) }
             }
             .pickerStyle(.segmented)
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
             .padding(.bottom, 8)
         }
     }

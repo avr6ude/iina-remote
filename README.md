@@ -39,3 +39,5 @@ open ios/IINARemote.xcodeproj
 Each IINA window serves a WebSocket on port 8766 and up, advertised over Bonjour as
 `_iina-remote._tcp`; the browser remote is served on port 8765. There is no authentication:
 anyone on your network can control playback.
+
+[Privacy](PRIVACY.md): the app collects no data and talks only to IINA on your network.

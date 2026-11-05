@@ -24,11 +24,8 @@ struct RootView: View {
         .onChange(of: discovery.players.map(\.name), initial: true) { _, names in
             if !names.contains(selectedName), names.count == 1 { selectedName = names[0] }
         }
-        .onChange(of: Remote.shared.selected?.state) { publish() }
-        .onChange(of: Remote.shared.selected?.artwork?.tint) { publish() }
         .onChange(of: showsLiveActivity) {
-            Remote.shared.published = nil
-            publish()
+            Task { await Remote.shared.publish() }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { wasInBackground = true }
@@ -37,10 +34,6 @@ struct RootView: View {
                 discovery.refresh()
             }
         }
-    }
-
-    private func publish() {
-        if let state = Remote.shared.selected?.state { Remote.shared.publish(state, canStart: scenePhase == .active) }
     }
 
     private var playerMenu: some View {

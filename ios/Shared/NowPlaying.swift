@@ -72,31 +72,62 @@ extension NowPlaying {
 }
 
 extension Remote {
-    /// Moves the widget and Live Activity along with `state`; nothing playing, or the setting turned off, ends the activity.
-    /// iOS only lets an app start a Live Activity from the foreground, so callers pass `canStart` only then.
-    func publish(_ state: PlayerState, canStart: Bool = false) {
-        guard let selected else { return }
-        let nowPlaying = NowPlaying(selected, state: state)
-        let activities = Activity<PlaybackAttributes>.activities
-        if let published, published.matches(nowPlaying), !(canStart && activities.isEmpty) { return }
-        published = nowPlaying
-        WidgetCenter.shared.reloadAllTimelines()
-
-        let content = ActivityContent(state: nowPlaying, staleDate: nil)
-        let showsActivity = UserDefaults.standard.bool(forKey: Self.liveActivityKey)
-        let ends = state.title.isEmpty || !showsActivity
-        Task {
-            for activity in Activity<PlaybackAttributes>.activities {
-                if ends {
-                    await activity.end(content, dismissalPolicy: .immediate)
-                } else {
-                    await activity.update(content)
-                }
-            }
+    /// Keeps the widget and Live Activity on the selected IINA for as long as the app runs. A view's onChange can't:
+    /// it stops firing in the background, and an intent launches the app without any views.
+    func followSelected() {
+        withObservationTracking {
+            _ = selected?.state
+            _ = selected?.artwork?.tint
+        } onChange: {
+            Task { @MainActor in self.followSelected() }
         }
-        if canStart, showsActivity, activities.isEmpty, !state.title.isEmpty, !state.pause,
-           ActivityAuthorizationInfo().areActivitiesEnabled {
-            _ = try? Activity.request(attributes: PlaybackAttributes(), content: content)
+        Task { await publish() }
+    }
+
+    /// Moves the widget and Live Activity along with the selected IINA; nothing playing, no connection, or the setting turned off ends the activity.
+    func publish() async {
+        guard let selected, let state = selected.state else { return await endIfDisconnected() }
+        let nowPlaying = NowPlaying(selected, state: state)
+        let changed = published?.matches(nowPlaying) != true
+        if changed {
+            published = nowPlaying
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+
+        let activities = Activity<PlaybackAttributes>.activities
+        let content = ActivityContent(state: nowPlaying, staleDate: nil)
+        if state.title.isEmpty || !UserDefaults.standard.bool(forKey: Self.liveActivityKey) {
+            await endLiveActivity()
+        } else if activities.isEmpty {
+            // iOS only lets an app start a Live Activity from the foreground; in the background this throws.
+            if !state.pause, ActivityAuthorizationInfo().areActivitiesEnabled {
+                _ = try? Activity.request(attributes: PlaybackAttributes(), content: content)
+            }
+        } else if changed {
+            for activity in activities { await activity.update(content) }
+        }
+    }
+
+    func endLiveActivity() async {
+        for activity in Activity<PlaybackAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+    }
+
+    /// Connections drop whenever the phone wakes, and an activity ended in the background can't come back until the app opens,
+    /// so this gives the connection ten seconds to return. Short sleeps keep time frozen in the background from counting.
+    private func endIfDisconnected() async {
+        guard !isAwaitingConnection else { return }
+        isAwaitingConnection = true
+        defer { isAwaitingConnection = false }
+        for _ in 0..<40 where selected?.state == nil {
+            try? await Task.sleep(for: .milliseconds(250))
+        }
+        guard selected?.state == nil else { return }
+        await endLiveActivity()
+        if published != nil {
+            published = nil
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 }

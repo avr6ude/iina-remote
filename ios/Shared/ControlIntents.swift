@@ -74,9 +74,13 @@ enum ControlError: Error, CustomLocalizedStringResourceConvertible {
 @MainActor
 private func control(_ command: (PlayerState) -> Command) async throws -> some IntentResult {
     let remote = Remote.shared
-    guard let current = await remote.connectedPlayer()?.state,
-          let state = await remote.perform(command(current))
-    else { throw ControlError.noIINA }
-    remote.publish(state)
+    guard let player = await remote.reconnectedPlayer(), let state = player.state else {
+        await remote.endLiveActivity()
+        throw ControlError.noIINA
+    }
+    player.send(command(state))
+    // iOS freezes the app once the intent returns, and the plugin reports a seek's result up to half a second later.
+    try? await Task.sleep(for: .seconds(1))
+    await remote.publish()
     return .result()
 }

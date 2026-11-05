@@ -181,7 +181,8 @@ struct PlaybackLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.bottom) {
-                    PlaybackCard(nowPlaying: context.state).padding(.horizontal, 6)
+                    // The island's expanded height is capped and its top goes to the camera, leaving less room than the lock screen.
+                    PlaybackCard(nowPlaying: context.state, spacing: 8, playSize: 36).padding(.horizontal, 6)
                 }
             } compactLeading: {
                 Image(systemName: "play.tv.fill").foregroundStyle(.red)
@@ -190,7 +191,7 @@ struct PlaybackLiveActivity: Widget {
                     Text(timerInterval: context.state.interval, countsDown: true)
                         .monospacedDigit()
                         .multilineTextAlignment(.trailing)
-                        .frame(maxWidth: 44)
+                        .frame(maxWidth: context.state.duration - context.state.time >= 3600 ? 66 : 44)
                 } else {
                     Image(systemName: "pause.fill")
                 }
@@ -201,17 +202,16 @@ struct PlaybackLiveActivity: Widget {
     }
 }
 
-/// The lock screen player.
+/// The lock screen and Dynamic Island player.
 private struct PlaybackCard: View {
     let nowPlaying: NowPlaying
+    var spacing: CGFloat = 12
+    var playSize: CGFloat = 44
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: spacing) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(nowPlaying.title).font(.headline).lineLimit(1)
-                    Text(nowPlaying.subtitle).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
-                }
+                Text(nowPlaying.title).font(.headline).lineLimit(1)
                 Spacer()
                 Image(systemName: "play.tv.fill").foregroundStyle(.secondary)
             }
@@ -226,7 +226,7 @@ private struct PlaybackCard: View {
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
             }
-            Controls(nowPlaying: nowPlaying, playSize: 44)
+            Controls(nowPlaying: nowPlaying, playSize: playSize)
                 .font(.title2)
                 .padding(.horizontal, 8)
         }

@@ -59,6 +59,8 @@ struct RootView: View {
                 Label("Looking for IINA…", systemImage: "play.tv")
             } description: {
                 Text("Open a video in IINA on a Mac on this network, with the Remote plugin enabled.")
+            } actions: {
+                Link("Can't see your computer? Install plugin here", destination: URL(string: "https://github.com/avr6ude/iina-remote")!)
             }
         }
     }

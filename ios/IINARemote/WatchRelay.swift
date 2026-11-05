@@ -16,7 +16,7 @@ final class WatchRelay: NSObject, WCSessionDelegate, Sendable {
         nonisolated(unsafe) let reply = replyHandler
         Task { @MainActor in
             let remote = Remote.shared
-            let state = if let command { await remote.perform(command) } else { await remote.connectedPlayer()?.state }
+            let state = if let command { await remote.perform(command) } else { await remote.playerForWatch()?.state }
             reply(state.flatMap { try? JSONEncoder().encode($0) }.map { ["state": $0] } ?? [:])
         }
     }

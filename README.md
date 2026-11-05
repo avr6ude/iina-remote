@@ -17,7 +17,7 @@ play, pause, seek, volume, speed, subtitle and audio tracks, delays, playlist, c
 
 **2. iPhone app.**
 
-<a href="https://apps.apple.com/app/id6825027883"><img src="https://tools.applemarketingtools.com/api/badges/download-on-the-app-store/black/en-us" height="40" alt="Download on the App Store"></a>
+<a href="https://apps.apple.com/app/id6825027883"><img src="screenshots/app-store-badge.svg" height="40" alt="Download on the App Store"></a>
 
 Open a video in IINA and launch the app. It finds every IINA window on your network by itself;
 with more than one, tap the title to switch. Leave the app while something plays to get a Live Activity

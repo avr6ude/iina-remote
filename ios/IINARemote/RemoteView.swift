@@ -46,20 +46,32 @@ private struct NowPlayingScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 16)
-            if let artwork = player.artwork {
-                Image(uiImage: artwork.image)
-                    .resizable()
-                    .scaledToFit()
-                    .clipShape(.rect(cornerRadius: 12))
-                    .shadow(color: .black.opacity(0.4), radius: 24, y: 12)
-                    .frame(maxHeight: 340)
-                    .scaleEffect(state.pause ? 0.86 : 1)
-                    .animation(.spring(duration: 0.5, bounce: 0.3), value: state.pause)
-                Spacer(minLength: 28)
+            // Takes the same space with or without a picture, whatever its shape, so nothing below it moves.
+            Group {
+                if let artwork = player.artwork {
+                    Image(uiImage: artwork.image)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(.rect(cornerRadius: 12))
+                } else {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.white.opacity(0.08))
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                        .overlay {
+                            Image(systemName: "play.tv")
+                                .font(.system(size: 48))
+                                .foregroundStyle(.tertiary)
+                        }
+                }
             }
+            .shadow(color: .black.opacity(0.4), radius: 24, y: 12)
+            .frame(maxWidth: .infinity, maxHeight: 340)
+            .scaleEffect(state.pause ? 0.86 : 1)
+            .animation(.spring(duration: 0.5, bounce: 0.3), value: state.pause)
+            Spacer(minLength: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(state.title).font(.title3.weight(.semibold)).lineLimit(2)
-                if let subtitle { Text(subtitle).foregroundStyle(.secondary).lineLimit(1) }
+                Text(subtitle ?? " ").foregroundStyle(.secondary).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Scrubber(state: state, send: player.send).padding(.top, 18)
